@@ -10,10 +10,10 @@ tags: [adr, tetris-xl, difficulty, gravity, bag, scoring, level]
 
 # ADR-0003: 難度曲線、重力表、Bag 權重與關卡倍率
 
-- 狀態：Accepted
+- 狀態：Accepted（rev.3 · upstream delta；rev.2 為最後 review round）
 - 日期：2026-07-22
 - 決策者：專案發起團隊
-- 相關文件：ADR-0001（rev.4）§2.3 / §2.4 / §2.4.1 / §2.4.2 / §2.7、ADR-0002（rev.3）§2.7
+- 相關文件：ADR-0001（rev.5）§2.3 / §2.4 / §2.4.1 / §2.4.2 / §2.7、ADR-0002（rev.3）§2.7、ADR-0004（rev.2）§2.4（軟降實體鍵位）
 
 ## 1. 背景 (Context)
 
