@@ -25,4 +25,8 @@ export interface GameStateSnapshot {
   readonly holdSlot: TypeId | null; readonly piece: Piece | null;
   readonly nextPieces: readonly TypeId[];
 }
+
+/** Snapshot builders must copy piece cells/origin/anchor with `.slice()` and
+ * preview values with `bagQueue.slice(0, previewCount)` (or structuredClone). */
+export type PieceSnapshot = Readonly<Piece>;
 // per ADR-0006 rev.3 §2.7; fields are the deterministic initial-state projection

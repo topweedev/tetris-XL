@@ -105,6 +105,9 @@ export default [
     },
     rules: {
       'no-restricted-globals': 'off', // node scripts legitimately use process etc.
+      'no-eval': 'error',
+      'no-new-func': 'error',
+      'no-implied-eval': 'error',
     },
   },
 ];

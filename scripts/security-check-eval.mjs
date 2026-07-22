@@ -10,7 +10,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const ROOT = 'src';
+const ROOTS = ['src', 'scripts', 'vite.config.ts', 'vitest.config.ts', 'eslint.config.js'];
 const EXTS = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs']);
 // Patterns are literal-string tokens; must appear as actual code, not names/comments.
 const FORBIDDEN_PATTERNS = [
@@ -24,7 +24,7 @@ const FORBIDDEN_PATTERNS = [
   { name: 'Function("...", …)', re: /\bFunction\s*\(\s*["'`]/ },
 ];
 
-/** Walk src/ recursively and return file paths of interest. */
+/** Walk configured source and security-check paths recursively. */
 function* walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -39,12 +39,11 @@ function* walk(dir) {
 
 let hits = 0;
 try {
-  for (const path of walk(ROOT)) {
+  const paths = ROOTS.flatMap((root) => statSync(root).isDirectory() ? [...walk(root)] : [root]);
+  for (const path of paths) {
+    if (path === 'scripts/security-check-eval.mjs') continue;
     const src = readFileSync(path, 'utf8');
     src.split('\n').forEach((line, i) => {
-      // Skip lines that are eslint-disable comments for these rules — they are
-      // explicit exceptions and the reviewer accepted them.
-      if (/\/\/\s*eslint-disable.*no-eval/i.test(line)) return;
       for (const { name, re } of FORBIDDEN_PATTERNS) {
         if (re.test(line)) {
           console.error(`${path}:${i + 1}: forbidden pattern "${name}"`);

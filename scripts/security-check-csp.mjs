@@ -46,6 +46,13 @@ if (!metaMatch) {
 // Normalize whitespace in the content string.
 const csp = metaMatch[3].replace(/\s+/g, ' ').trim();
 
+const scriptSrc = csp.match(/(?:^|\s)script-src\s+([^;]+)/)?.[1] ?? '';
+if (/['"]unsafe-eval['"]|['"]unsafe-inline['"]|\bdata:/i.test(scriptSrc)) {
+  console.error('[security-check-csp] FAIL — script-src contains an unsafe execution/source token.');
+  process.exit(1);
+}
+// TODO: remove style-src 'unsafe-inline' per ADR-0007 rev.3.
+
 let missing = 0;
 for (const directive of REQUIRED_DIRECTIVES) {
   if (!csp.includes(directive)) {
