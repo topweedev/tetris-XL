@@ -1,3 +1,13 @@
+---
+title: ADR-0002 Polycube Rotation Kicks
+type: decision
+status: proposed
+adr_id: "0002"
+repo: topweedev/tetris-XL
+path: docs/adr/0002-polycube-rotation-kicks.md
+tags: [adr, tetris-xl, polycube, rotation, wall-kick, floor-kick]
+---
+
 # ADR-0002: Polycube 集合、旋轉正規化與 Kick 偏移表
 
 - 狀態：Proposed
