@@ -9,6 +9,7 @@ export const enum GameAction {
 export const VALID_GAMEACTION_VALUES = Object.freeze([
   0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 20, 30, 31, 40, 41, 42,
 ] as const);
+/** KeyboardEvent.code alias; P3.1 will narrow this to the validated keymap. */
 export type PhysicalKey = string;
 
 export function assertValidGameActionValues(): void {

@@ -1,8 +1,10 @@
 import type { BoardArray } from './board';
 import type { Piece, TypeId } from './piece';
 
+/** FSM states per ADR-0001 rev.6 §2.4.1; READY is a pass-through, not discrete. */
 export type FsmState = 'BOOT' | 'SPAWN' | 'FALLING' | 'GROUNDED' | 'LOCKED' | 'CLEARING' | 'GAME_OVER';
 export type DasDir = 'X+' | 'X-' | 'Y+' | 'Y-' | null;
+/** Impl detail; concrete 7-bag shape finalized in P1.3. */
 export interface BagSnapshot { readonly queue: readonly TypeId[]; readonly index: number; }
 
 export interface GameState {
@@ -16,6 +18,7 @@ export interface GameState {
   readonly dasDirection: DasDir; readonly dasCharge: number; readonly dasRepeatCharge: number;
 }
 
+/** Read-only UI projection; lines aliases totalLayersCleared, nextPieces previews bagQueue. */
 export interface GameStateSnapshot {
   readonly fsmState: FsmState; readonly score: number; readonly level: number;
   readonly lines: number; readonly combo: number; readonly b2bActive: boolean;

@@ -1,6 +1,6 @@
 // per ADR-0001 rev.6 §2.2 (static structure) + ADR-0002 rev.3 §2.1–§2.2
-export type TypeId = number;
-export type RotationStateId = number;
+export type TypeId = number & { readonly __brand: 'TypeId' };
+export type RotationStateId = number & { readonly __brand: 'RotationStateId' };
 
 export interface Piece {
   readonly typeId: TypeId;
@@ -15,6 +15,11 @@ export interface Piece {
 }
 export const SENTINEL_CELL = 0x7f;
 
-export function assertTypeId(value: number): asserts value is TypeId {
-  if (!Number.isInteger(value) || value < 0 || value > 11) throw new RangeError('TypeId must be a u8 in [0, 11]');
+export function typeId(value: number): TypeId {
+  if (!Number.isInteger(value) || value < 0 || value > 11) throw new RangeError(`TypeId out of u8 range [0, 11]: ${value}`);
+  return value as TypeId;
+}
+export function rotationStateId(value: number): RotationStateId {
+  if (!Number.isInteger(value) || value < 0 || value > 23) throw new RangeError(`RotationStateId out of range [0, 23]: ${value}`);
+  return value as RotationStateId;
 }

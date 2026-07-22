@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const __dirname = resolve(fileURLToPath(new URL('.', import.meta.url)));
 
 // ─── ADR-0006 §2.3: adrHash injection ──────────────────────────────────
 // sha256 over the concatenated raw bytes of ADR-0001..0005 (docs-only ADRs
@@ -42,7 +44,7 @@ const BUILD_TIME = new Date().toISOString();
 const COMMIT_SHA = safeCommitSha();
 
 export default defineConfig({
-  resolve: { alias: { '@engine': resolve('src/engine') } },
+  resolve: { alias: { '@engine': resolve(__dirname, 'src/engine'), '@build': resolve(__dirname, 'src/build') } },
   // Vanilla TS + three.js; no framework runtime (per ADR-0001 §2.1)
   root: '.',
   publicDir: 'public',
