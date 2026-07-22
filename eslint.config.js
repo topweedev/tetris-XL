@@ -58,7 +58,7 @@ export default [
       ],
       'no-restricted-imports': [
         'error',
-        { patterns: ['@engine/../*', '@engine/../**'] },
+        { patterns: ['@engine/../*', '@engine/../**', '@engine/*/../*', '@engine/*/../**', '@engine/**/../*', '@engine/**/../**'] },
       ],
     },
   },

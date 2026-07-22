@@ -9,8 +9,14 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { relative } from 'node:path';
+
+const SELF = relative(process.cwd(), fileURLToPath(import.meta.url));
+const IGNORE_PATHS = new Set([SELF]);
 
 const ROOTS = ['src', 'scripts', 'vite.config.ts', 'vitest.config.ts', 'eslint.config.js'];
+const EXTRA_ROOTS = process.env['SECURITY_CHECK_EVAL_EXTRA_ROOTS']?.split(':').filter(Boolean) ?? [];
 const EXTS = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs']);
 // Patterns are literal-string tokens; must appear as actual code, not names/comments.
 const FORBIDDEN_PATTERNS = [
@@ -39,9 +45,9 @@ function* walk(dir) {
 
 let hits = 0;
 try {
-  const paths = ROOTS.flatMap((root) => statSync(root).isDirectory() ? [...walk(root)] : [root]);
+  const paths = [...ROOTS, ...EXTRA_ROOTS].flatMap((root) => statSync(root).isDirectory() ? [...walk(root)] : [root]);
   for (const path of paths) {
-    if (path === 'scripts/security-check-eval.mjs') continue;
+    if (IGNORE_PATHS.has(path)) continue;
     const src = readFileSync(path, 'utf8');
     src.split('\n').forEach((line, i) => {
       for (const { name, re } of FORBIDDEN_PATTERNS) {

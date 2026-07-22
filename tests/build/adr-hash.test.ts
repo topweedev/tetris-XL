@@ -4,7 +4,7 @@ import { computeAdrHash } from '../../src/build/adr-hash-plugin';
 
 describe('adr hash check', () => {
   it('matches the shared plugin helper', () => {
-    const output = execFileSync('node', ['--experimental-strip-types', 'scripts/security-check-adr-hash.mjs'], { encoding: 'utf8' });
+    const output = execFileSync(process.execPath, ['--experimental-strip-types', 'scripts/security-check-adr-hash.mjs'], { encoding: 'utf8' });
     expect(output).toContain(`deterministic adrHash = ${computeAdrHash()}`);
   });
 });

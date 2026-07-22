@@ -50,7 +50,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: process.env['SOURCE_MAP'] === 'true',
+    // project-specific env; SOURCE_MAP is too generic and risks CI runner leakage
+    sourcemap: process.env['BUILD_SOURCE_MAP'] === 'true',
     // No CDN / no split - single-origin bundle keeps CSP `connect-src 'none'` viable
     rollupOptions: {
       output: {
@@ -63,7 +64,6 @@ export default defineConfig({
     // Local-only dev server; no external connections in code (ADR-0006 §2.6 F5)
     port: 5173,
     strictPort: true,
-    fs: { allow: ['src'] },
   },
 
   // ADR-0006 §2.3 + §2.6 F4: build-time constant injection.

@@ -30,7 +30,6 @@
     "baseUrl": ".",
     "paths": {
       "@engine/*": ["src/engine/*"],
-      "@build/*": ["src/build/*"]
     },
 
     // Vite build-time env constants (see vite.config.ts define block)

@@ -6,7 +6,7 @@
   "description": "5x5x12 3D fallout - vanilla TS + three.js game",
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=22.6.0"
+    "node": ">=22.6.0 <23.0.0"
   },
   "scripts": {
     "dev": "vite",

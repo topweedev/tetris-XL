@@ -47,9 +47,12 @@ if (!metaMatch) {
 const csp = metaMatch[3].replace(/\s+/g, ' ').trim();
 
 const scriptSrc = csp.match(/(?:^|\s)script-src\s+([^;]+)/)?.[1] ?? '';
-if (/['"]unsafe-eval['"]|['"]unsafe-inline['"]|\bdata:/i.test(scriptSrc)) {
-  console.error('[security-check-csp] FAIL — script-src contains an unsafe execution/source token.');
-  process.exit(1);
+const ALLOWED_SCRIPT_SRC_TOKENS = new Set(["'self'", "'strict-dynamic'"]);
+for (const token of scriptSrc.split(/\s+/).filter(Boolean)) {
+  if (!ALLOWED_SCRIPT_SRC_TOKENS.has(token)) {
+    console.error(`[security-check-csp] FAIL — disallowed script-src token: ${token}`);
+    process.exit(1);
+  }
 }
 // TODO: remove style-src 'unsafe-inline' per ADR-0007 rev.3.
 

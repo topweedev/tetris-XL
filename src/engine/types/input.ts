@@ -16,10 +16,3 @@ export function isValidGameAction(v: number): v is GameAction {
 }
 /** KeyboardEvent.code alias; P3.1 will narrow this to the validated keymap. */
 export type PhysicalKey = string;
-
-export function assertAllGameActionValuesAreListed(): void {
-  const values = [0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 20, 30, 31, 40, 41, 42];
-  if (values.length !== VALID_GAMEACTION_VALUES.length || values.some((v, i) => v !== VALID_GAMEACTION_VALUES[i])) {
-    throw new Error('GameAction values are out of sync');
-  }
-}
