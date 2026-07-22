@@ -44,7 +44,17 @@ const BUILD_TIME = new Date().toISOString();
 const COMMIT_SHA = safeCommitSha();
 
 export default defineConfig({
-  resolve: { alias: { '@engine': resolve(__dirname, 'src/engine'), '@build': resolve(__dirname, 'src/build') } },
+  resolve: {
+    alias: [{
+      find: /^@engine\/(.+)$/,
+      replacement: (( _match: string, subpath: string) => {
+        if (subpath.split('/').some((segment) => segment === '..')) {
+          throw new Error(`@engine alias rejected traversal: ${subpath}`);
+        }
+        return resolve(__dirname, 'src/engine', subpath);
+      }) as unknown as string,
+    }],
+  },
   // Vanilla TS + three.js; no framework runtime (per ADR-0001 §2.1)
   root: '.',
   publicDir: 'public',
@@ -52,7 +62,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false,
     // No CDN / no split - single-origin bundle keeps CSP `connect-src 'none'` viable
     rollupOptions: {
       output: {
@@ -65,6 +75,7 @@ export default defineConfig({
     // Local-only dev server; no external connections in code (ADR-0006 §2.6 F5)
     port: 5173,
     strictPort: true,
+    fs: { allow: ['src'] },
   },
 
   // ADR-0006 §2.3 + §2.6 F4: build-time constant injection.

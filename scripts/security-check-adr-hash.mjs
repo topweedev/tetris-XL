@@ -11,10 +11,8 @@
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
-// Dynamic import so this script also works before the TS compile step.
-// We shell out to `node --experimental-strip-types` if available on 22+,
-// otherwise use a tiny stub reader mirroring src/build/adr-hash-plugin.ts.
-// Kept intentionally self-contained: no build required to run this check.
+// The script is run with Node 22.6+'s --experimental-strip-types flag so the
+// shared TypeScript helper is always cross-checked below.
 
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -64,26 +62,23 @@ try {
   const helperUrl = pathToFileURL(
     resolve(process.cwd(), 'src/build/adr-hash-plugin.ts'),
   ).href;
-  // Node 22+ can strip TS types natively with --experimental-strip-types.
-  // If not enabled the import will fail; we then just accept the pure-JS
-  // computation above as authoritative for CI.
-  const mod = await import(helperUrl).catch(() => null);
-  if (mod && typeof mod.computeAdrHash === 'function') {
-    const helperHash = mod.computeAdrHash();
-    if (helperHash !== first) {
-      console.error(
-        `[security-check-adr-hash] FAIL — src/build helper disagrees with CI script.\n` +
-          `  ci: ${first}\n` +
-          `  helper: ${helperHash}\n` +
-          `Update ADR_FILES_FOR_HASH in one of them to match.`,
-      );
-      process.exit(1);
-    }
+  const mod = await import(helperUrl);
+  if (typeof mod.computeAdrHash !== 'function') {
+    throw new Error('src/build/adr-hash-plugin.ts does not export computeAdrHash');
+  }
+  const helperHash = mod.computeAdrHash();
+  if (helperHash !== first) {
+    console.error(
+      `[security-check-adr-hash] FAIL — src/build helper disagrees with CI script.\n` +
+        `  ci: ${first}\n` +
+        `  helper: ${helperHash}\n` +
+        `Update ADR_FILES_FOR_HASH in one of them to match.`,
+    );
+    process.exit(1);
   }
 } catch (err) {
-  // Non-fatal: the pure-JS computation stands. The helper module is
-  // exercised at build time by vite.config.ts anyway.
-  console.log(`[security-check-adr-hash] note: TS helper cross-check skipped (${err.message})`);
+  console.error(`[security-check-adr-hash] FAIL — helper cross-check failed: ${err.message}`);
+  process.exit(1);
 }
 
 console.log(`[security-check-adr-hash] OK — deterministic adrHash = ${first}`);

@@ -56,6 +56,10 @@ export default [
         'error',
         { prefer: 'type-imports' },
       ],
+      'no-restricted-imports': [
+        'error',
+        { patterns: ['@engine/../*', '@engine/../**'] },
+      ],
     },
   },
 

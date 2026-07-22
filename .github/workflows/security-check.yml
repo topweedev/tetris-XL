@@ -65,4 +65,4 @@ jobs:
               exit 1
             fi
           done
-      - run: node scripts/security-check-adr-hash.mjs
+      - run: node --experimental-strip-types scripts/security-check-adr-hash.mjs

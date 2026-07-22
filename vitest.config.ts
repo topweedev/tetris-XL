@@ -1,7 +1,20 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
+
+const root = resolve(process.cwd());
 
 export default defineConfig({
-  resolve: { alias: { '@engine': new URL('./src/engine', import.meta.url).pathname, '@build': new URL('./src/build', import.meta.url).pathname } },
+  resolve: {
+    alias: [{
+      find: /^@engine\/(.+)$/,
+      replacement: (( _match: string, subpath: string) => {
+        if (subpath.split('/').some((segment) => segment === '..')) {
+          throw new Error(`@engine alias rejected traversal: ${subpath}`);
+        }
+        return resolve(root, 'src/engine', subpath);
+      }) as unknown as string,
+    }],
+  },
   test: {
     environmentMatchGlobs: [
       ['tests/ui/**', 'jsdom'],
