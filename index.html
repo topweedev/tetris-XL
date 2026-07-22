@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Content Security Policy per ADR-0006 §2.6 F5.
+
+      - default-src 'self'            : nothing loads from anywhere but this origin
+      - script-src 'self'             : ban inline/eval scripts (also enforced by F1)
+      - style-src 'self' 'unsafe-inline'
+                                      : spike-phase tolerance for three.js and vanilla UI
+                                        inline styles; rev.2 target = nonce-based
+      - connect-src 'none'            : NO outbound fetch / XHR / WebSocket / EventSource
+                                        (fully offline SPA — see ADR-0006 §4)
+      - object-src 'none'             : ban <object> / <embed> / <applet> plugin fallbacks
+      - frame-src 'none'              : ban iframes we embed
+      - frame-ancestors 'none'        : ban being embedded (clickjacking guard)
+      - img-src 'self' data:          : own images + inline data URIs (for tiny icons)
+      - base-uri 'self'               : ban <base> URL override
+      - form-action 'none'            : no form submissions
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        connect-src 'none';
+        object-src 'none';
+        frame-src 'none';
+        frame-ancestors 'none';
+        img-src 'self' data:;
+        base-uri 'self';
+        form-action 'none';
+      "
+    />
+
+    <title>tetris-XL</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Game canvas mounts here at runtime -->
+    </div>
+    <!--
+      Entry point resolved by Vite. `src/main.ts` will be created in the
+      spike-phase implementation PR (not this scaffolding PR).
+    -->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
