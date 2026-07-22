@@ -1,0 +1,32 @@
+name: code-review-graph
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: code-review-graph-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # draft PR 先不跑，減少噪音；轉 ready_for_review 會自動觸發
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Graph-aware PR review (comment-only)
+        uses: tirth8205/code-review-graph@v2.3.6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment: true
+          fail-on-risk: none
+          python-version: "3.12"
