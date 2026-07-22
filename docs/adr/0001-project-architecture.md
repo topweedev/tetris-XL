@@ -1,3 +1,13 @@
+---
+title: ADR-0001 Project Architecture
+type: decision
+status: accepted
+adr_id: "0001"
+repo: topweedev/tetris-XL
+path: docs/adr/0001-project-architecture.md
+tags: [adr, architecture, tetris-xl, tech-stack, game-loop]
+---
+
 # ADR-0001: Tetris-XL 專案架構決策
 
 - 狀態：Accepted（rev.4 · **final**）
