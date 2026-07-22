@@ -10,3 +10,10 @@ export const VALID_GAMEACTION_VALUES = Object.freeze([
   0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 20, 30, 31, 40, 41, 42,
 ] as const);
 export type PhysicalKey = string;
+
+export function assertValidGameActionValues(): void {
+  const values = [0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 20, 30, 31, 40, 41, 42];
+  if (values.length !== VALID_GAMEACTION_VALUES.length || values.some((v, i) => v !== VALID_GAMEACTION_VALUES[i])) {
+    throw new Error('GameAction values are out of sync');
+  }
+}

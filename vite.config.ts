@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execSync } from 'node:child_process';
+import { resolve } from 'node:path';
 
 // ─── ADR-0006 §2.3: adrHash injection ──────────────────────────────────
 // sha256 over the concatenated raw bytes of ADR-0001..0005 (docs-only ADRs
@@ -41,6 +42,7 @@ const BUILD_TIME = new Date().toISOString();
 const COMMIT_SHA = safeCommitSha();
 
 export default defineConfig({
+  resolve: { alias: { '@engine': resolve('src/engine') } },
   // Vanilla TS + three.js; no framework runtime (per ADR-0001 §2.1)
   root: '.',
   publicDir: 'public',
