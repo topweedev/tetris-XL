@@ -10,9 +10,9 @@ tags: [adr, architecture, tetris-xl, tech-stack, game-loop]
 
 # ADR-0001: Tetris-XL 專案架構決策
 
-- 狀態：Accepted（rev.4 · **final**）
+- 狀態：Accepted（rev.5 · upstream delta；rev.4 為 final review round）
 - 日期：2026-07-22
-- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2）
+- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2；rev.5 — upstream delta 收斂 §2.6 per ADR-0004 rev.2 §5、ADR-0005 rev.2 §5）
 - 決策者：專案發起團隊
 - 相關文件：README.md
 
