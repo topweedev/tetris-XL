@@ -1,7 +1,7 @@
 ---
 title: ADR-0005 Hold, Combo, Spin, Back-to-Back and Extended Score Formula
 type: decision
-status: proposed
+status: accepted
 adr_id: "0005"
 repo: topweedev/tetris-XL
 path: docs/adr/0005-hold-combo-spin-b2b-scoring.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, scoring, hold, combo, spin, back-to-back, b2b]
 
 # ADR-0005: Hold、連擊 (Combo)、Spin、Back-to-Back 與擴充計分公式
 
-- 狀態：Proposed
+- 狀態：Accepted
 - 日期：2026-07-22
 - 決策者：專案發起團隊
 - 相關文件：ADR-0001（rev.4）§2.1 / §2.4.1 / §2.4.3 / §2.7、ADR-0002（rev.3）§2.4 / §2.5、ADR-0003（rev.2）§2.5 / §2.6、ADR-0004（rev.2）§2.2 / §2.3 / §2.4
@@ -70,20 +70,20 @@ onHold():
     spawnFromTypeId(swapTypeId)   // 直接以 swapTypeId 生成
   
   # spawn 走 ADR-0001 §2.4.4 之預設位置 (2, 2, 11)
-  # 用 §2.5 spawn-kick 表（MVP 為空表；碰撞即 game over per §2.4.3）
+  # 用 ADR-0002 §2.5 spawn-kick 表（MVP 為空表；碰撞即 game over per ADR-0001 §2.4.3）
 ```
 
 **anti-abuse `holdUsedThisPiece` flag**：
 
 - 每 piece 只能 hold 一次；避免玩家反覆 hold 洗掉不利 piece 又立即換回
-- 於 `SPAWN` state 進入時重置為 `false`（無論此 piece 來自 hold slot、bag 或 hold-fill 一體）
+- 於 `SPAWN` state 進入時重置為 `false`（無論此 piece 來自 hold slot swap-back，或首次 hold 時 slot 空之從 bag 抽取路徑）
 - 於 `GAME_OVER → BOOT` 重置 `holdSlot = null`、`holdUsedThisPiece = false`
 
 **與 ADR-0001 §2.4.1 FSM 之整合**：
 
 - Hold action 只於 `FALLING` / `GROUNDED` 消化；其他 state 忽略
 - Hold 後的 spawn 走**新** piece 的 `SPAWN` state（不跳過 spawn-check 與 top-out 判定）
-- 消耗 Hold 於 `GROUNDED` 期間會 reset `lockDelay` 計時器（新 piece 從頭）；此為單次 reset，不受 §2.4.2 之 15-reset cap 影響（因 lockDelay 計時器隨 piece 而生）
+- 消耗 Hold 於 `GROUNDED` 期間會生成新 piece，新 piece 進入自己的 grounded 生命期時，`lockDelay` 計時器與 §2.4.2 之 15-reset cap 皆為新 piece 之獨立實例，自然歸零（等同於一般 lock-then-spawn 之計時器重置語意）
 
 **與 ADR-0004 §2.3 tick 順序之整合**：
 
@@ -97,7 +97,9 @@ Hold 於 tick 內處理順序：`Pause → Restart → Rotation → Translation 
 
 ### 2.2 連擊 (Combo)
 
-**定義**：連續 N 個 piece（不含 hold-swap 前置的取代 piece）皆 clear ≥ 1 layer，稱為 N 連擊。任一 piece 鎖定時 `clearedLayers === 0` 即中斷。
+**定義**：連續 N 個 piece 於 lock 時 clear ≥ 1 layer，稱為 N 連擊。任一 piece 於 lock 時 `clearedLayers === 0` 即中斷。
+
+**Hold 與 combo 的關係**：Hold action 本身**不觸發 lock**（見 §2.1 `onHold()`，僅 swap slot 與生成新 piece），因此 hold-swap 不改變 combo 狀態；swap 換入的替換 piece 隨其 lock 結果（有無 clear）正常參與 combo 計數，與從 bag 抽出之新 piece 無異。
 
 **狀態欄位**：
 
@@ -115,7 +117,8 @@ onPieceLock(clearedLayers):
       bus.emit('comboIncremented', { count: state.combo })
   else:
     if state.combo >= 0:
-      bus.emit('comboReset', { previous: state.combo + 1 })
+      # previousCount = 中斷前之連續 clear 數 = state.combo + 1（因 combo 由 -1 起算）
+      bus.emit('comboReset', { previousCount: state.combo + 1 })
     state.combo = -1
 ```
 
@@ -172,7 +175,9 @@ onPieceLock():
 
 **事件**：
 
-- Lock 時若判定 spin：`bus.emit('spinDetected', { withClear: clearedLayers > 0 })`
+- Lock 時若判定 spin：`bus.emit('spinDetected', { withClear: clearedLayers > 0, score: clearedLayers > 0 ? 0 : SPIN_NO_CLEAR_BASE * state.level })`
+  - `withClear=true` 時 `score=0`（實際 clear 分數由 `linesClear` 事件之 `score` 欄位承載，避免雙重計數）
+  - `withClear=false` 時 `score = 25 × level`（即 spin-no-clear bonus），使 UI 可即時顯示「純 spin 得分」浮動數字
 
 ### 2.4 Back-to-Back (B2B)
 
@@ -194,6 +199,7 @@ onPieceLock():
 
 ```ts
 b2bActive: boolean;  // 初始 false
+b2bCount:  number;   // 初始 0；當前連續 special clear 之次數；僅供 §2.6 UI 事件 payload，不參與 §2.5 分數計算
 ```
 
 **觸發流程**（於 §2.2 combo 觸發之後）：
@@ -203,15 +209,16 @@ onPieceLock(clearedLayers, isSpin):
   const isSpecial = clearedLayers.length > 0 && (clearedLayers.length === 4 || isSpin)
   const isNormal  = clearedLayers.length > 0 && !isSpecial
   
-  const applyB2B = isSpecial && state.b2bActive  # 本 lock 是否得 b2b 加成
+  const wasActive = state.b2bActive              # 快照舊值，決定 applyB2B / emit 語意
+  const applyB2B  = isSpecial && wasActive       # 本 lock 是否得 b2b 加成
   
   if isSpecial:
-    if state.b2bActive: bus.emit('b2bContinued', { count: state.b2bCount + 1 })
-    else:                bus.emit('b2bStart')
     state.b2bActive = true
-    state.b2bCount  = (state.b2bActive ? state.b2bCount + 1 : 1)
+    state.b2bCount  = wasActive ? state.b2bCount + 1 : 1
+    if wasActive: bus.emit('b2bContinued', { count: state.b2bCount })
+    else:         bus.emit('b2bStart')
   elif isNormal:
-    if state.b2bActive: bus.emit('b2bBroken', { count: state.b2bCount })
+    if wasActive: bus.emit('b2bBroken', { count: state.b2bCount })
     state.b2bActive = false
     state.b2bCount  = 0
   # no clear：不動
@@ -290,12 +297,12 @@ finalScore(n, level, isSpin, isB2B, combo, softRows, hardRows) =
 | 事件 | payload | 觸發時機 |
 |------|---------|----------|
 | `linesClear` | `{ n, isSpin, isB2B, score, combo }` | 每次 lock 有 clear |
-| `spinDetected` | `{ withClear: boolean }` | Lock 判定為 spin |
-| `comboIncremented` | `{ count }` | combo ≥ 1 |
-| `comboReset` | `{ previous }` | combo 由 ≥ 0 中斷為 -1 |
+| `spinDetected` | `{ withClear: boolean, score: number }` | Lock 判定為 spin；`withClear=false` 時 `score = SPIN_NO_CLEAR_BASE × level`（UI 顯示純 spin 得分），`withClear=true` 時 `score=0`（實分走 `linesClear.score`） |
+| `comboIncremented` | `{ count: number }` | combo ≥ 1 |
+| `comboReset` | `{ previousCount: number }` | combo 由 ≥ 0 中斷為 -1；`previousCount` = 中斷前之連續 clear 數 = 舊 `combo + 1` |
 | `b2bStart` | `{}` | 第一次 special clear（`b2bActive: false → true`） |
-| `b2bContinued` | `{ count }` | 連續 special clear（applyB2B = true） |
-| `b2bBroken` | `{ count }` | b2b 被 normal clear 打斷 |
+| `b2bContinued` | `{ count: number }` | 連續 special clear（applyB2B = true） |
+| `b2bBroken` | `{ count: number }` | b2b 被 normal clear 打斷；`count` 為中斷前之 `b2bCount` |
 | `holdSwapped` | `{ storedTypeId, swappedInTypeId }` | Hold action 執行成功 |
 
 **遵循 ADR-0001 §2.1**：「事件匯流排僅用於 UI 邊界」；tick path 純函式不依賴 bus。
@@ -396,6 +403,23 @@ export const HOLD_KEY_CODE = "KeyC" as const;
 - **ADR-0006（條件觸發）** 之持久化 / replay 格式擴充，可基於本 ADR §2.6 事件清單設計 UI 重播疊層
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.2 — 2026-07-22
+
+依 LA4 round-1 correctness review 修訂（brain：`oab/adr/0005-review-round1`；verdict：PASS，0 Blocking / 3 Should / 5 Nit）：
+
+- **S1 → §2.2 combo 定義**：移除誤導性括號「不含 hold-swap 前置的取代 piece」；改寫明訂 Hold action 本身不觸發 lock，因此不影響 combo；swap 後之替換 piece 依常規正常參與 combo 計數。
+- **S2 → §2.3 事件 + §2.6 事件表**：`spinDetected` payload 新增 `score: number` 欄位。`withClear=false` 時 `score = SPIN_NO_CLEAR_BASE × level`（使 UI 收得到純 spin 得分）；`withClear=true` 時 `score=0`，避免與 `linesClear.score` 雙重計數。
+- **S3 → §2.4 狀態欄位**：`b2bCount: number`（初始 `0`）補入宣告；標明僅供 §2.6 UI 事件 payload，不參與 §2.5 分數計算。
+- **N1 → §2.1 Hold FSM 整合**：改寫 lockDelay 段落，移除誤導性「不受 15-reset cap 影響」；改為明確說明 Hold spawn 新 piece 進入獨立 grounded 生命期，計時器與 cap 為新實例自然歸零。
+- **N2 → §2.4 pseudocode**：以 `wasActive` 快照舊 `b2bActive`，修掉 `state.b2bCount = (state.b2bActive ? state.b2bCount + 1 : 1)` 的 dead branch；同時把 `b2bContinued` emit 改為在 `state.b2bCount` 更新後發出（payload count 直接反映最新值）；`applyB2B` 亦改用 `wasActive` 語意更清楚。
+- **N3 → §2.2 code + §2.6 表**：`comboReset` payload 由 `previous` 改名為 `previousCount`；附註「= 中斷前之連續 clear 數 = 舊 `combo + 1`」，同步更新 §2.6 表。
+- **N4 → §2.1 anti-abuse flag 說明**：移除未定義之「hold-fill」術語；改寫成「無論此 piece 來自 hold slot swap-back，或首次 hold 時 slot 空之從 bag 抽取路徑」。
+- **N5 → §2.1 spawn pseudocode 註解**：「§2.5 spawn-kick 表」跨參照補齊為「ADR-0002 §2.5 spawn-kick 表」；同段之 game-over 條件補齊為「per ADR-0001 §2.4.3」。
+
+**Spin 偵測（kick-rotation lock vs 原 DISPATCH 期待之 immobility+三面接觸）**：LA4 認可本 ADR 採用之 kick-rotation lock 版本，理由已於 §2.3 設計取捨中說明；本輪不改。
+
+**status**：Proposed → Accepted（LA4 verdict PASS + 全部 Should/Nit 已於本 rev.2 落實；待人類 approve 後 squash-merge）。
 
 ### rev.1 — 2026-07-22
 
