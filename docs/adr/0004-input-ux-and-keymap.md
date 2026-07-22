@@ -1,7 +1,7 @@
 ---
 title: ADR-0004 3D Input UX, Keymap, GameAction and Replay Determinism
 type: decision
-status: proposed
+status: accepted
 adr_id: "0004"
 repo: topweedev/tetris-XL
 path: docs/adr/0004-input-ux-and-keymap.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, input, keymap, ux, gameaction, replay, gamepad, touch]
 
 # ADR-0004: 3D 輸入 UX、鍵位、GameAction 抽象與 Replay 決定論
 
-- 狀態：Proposed
+- 狀態：Accepted
 - 日期：2026-07-22
 - 決策者：專案發起團隊
 - 相關文件：ADR-0001（rev.4）§2.4 / §2.4.1 / §2.4.2 / §2.6、ADR-0002（rev.3）§2.4 / §2.5、ADR-0003（rev.2）§2.6
@@ -99,7 +99,7 @@ export const enum GameAction {
 
 - 使用 `const enum` 於編譯時內聯為整數，執行時零開銷
 - **不含**「rotate 180」以外的多倍角旋轉；連續兩次 `RotateYawPos` 即 180°
-- `Flip` 專為 spike 期「1 鍵翻轉」設計；post-spike 可透過連按 pitch/roll ±90° 兩次達成，但保留 `Flip` enum 供設定型玩家使用
+- `Flip` 專為 spike 期「1 鍵翻轉」設計；post-spike 可透過連按 **roll** ±90° 兩次達成（`2 × RotateRollPos = Ry(180°) = Flip`）。注意 `2 × RotatePitchPos = Rx(180°) ≠ Flip`（於八面體旋轉群 O 中 Rx180 與 Ry180 為不同元素）。保留 `Flip` enum 供設定型玩家使用
 - Enum 值有意留 gap（`0-3`, `10-15`, `20`, `30-31`, `40-42`）以便未來擴充而不衝突 replay
 
 ### 2.3 Tick 內動作處理順序
@@ -141,7 +141,8 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
 
 - 輸入輪詢於每 tick 起始（60 Hz，約 16.67 ms/tick）
 - Action 產生與消化必於同一 tick，不跨 tick 累積
-- Pause 期間 tick counter 停止遞增；replay 忽略 pause 時段
+- Pause 期間 tick counter 停止遞增
+- **Pause / Restart 屬 UX 系統動作，不錄入 replay stream**：Pause 停 tick 使錄影本身無 pause gap（相鄰 replay event tick 之間仍為連續）；播放端可自行 pause overlay 而不影響 replay 資料。Restart 語意為「離開此局」，於錄影邊界產生新 stream 而非於同 stream 內延續
 
 ### 2.4 Spike 期鍵位（鎖定 · MVP 用）
 
@@ -183,7 +184,7 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
    - Roll ± 對應「側傾」→ 剩餘兩鍵
 3. **`Flip` 保留為快捷鍵**，即使 6 鍵映射全開；玩家可用 `F` 一鍵 180°，避免高階連按
 4. **不使用**：`Ctrl`、`Alt`、`Meta`、`Enter`、`Backspace`（避免與瀏覽器 / OS 快捷衝突）
-5. **左手方案（試探）**：
+5. **左手方案（試探 · 候選之一）**：
 
    | Key | 候選 GameAction | 註 |
    |-----|-----------------|-----|
@@ -191,6 +192,8 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
    | W / S | `RotatePitchNeg` / `RotatePitchPos` | 與 spike 一致 |
    | A / D | `RotateRollNeg` / `RotateRollPos` | **新增**（spike 未開放）|
    | F | `Flip` | 保留快捷 |
+
+   **本表為候選之一，非預設**：具體鍵位待 playtest 資料回寫後於 rev.2 鎖定；本表僅示範左手集中方案結構。
 
 6. **右手保留**：方向鍵維持 X/Y 平移；`Space` 維持硬降；`LShift` 維持軟降（除非 playtest 顯示需重新分配）
 7. **不採**「chord」（如 Ctrl+Q）：所有 GameAction 為單一 physical key trigger，避免 chording 與 replay 決定論的相性問題
@@ -267,7 +270,8 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
 **Rebinding 限制（安全）**：
 
 - 讀 `localStorage` 之 rebinding 表以 zod 驗證（key ∈ 白名單、GameAction ∈ enum 有效值）
-- 不允許 GameAction 對映到多個 key ← 反向 OK（同一 action 兩個 key 為 alias，允許）
+- **不允許一個 physical key 對映到多個 GameAction**（單 key 觸發歧義會破壞 replay 決定論）
+- **允許一個 GameAction 對映到多個 physical key**（alias；例：Escape / P 皆綁 Pause）
 - 若驗證失敗，falls back 至本 ADR §2.4 default
 
 ## 3. 已考慮的替代方案 (Alternatives Considered)
@@ -293,7 +297,7 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
 
 - Roll (繞世界 +Y) 於 20° tilt 相機下的視覺意義不完全直觀；spike 期以 Flip 一鍵繞過此軸，post-spike 6 鍵映射需 playtest 才能安心開放 Roll ±
 - `LShift` 為軟降 → ADR-0001 §2.6 之 "Shift (hold)" 需 rev.5 挪至他鍵；MVP 未實作 hold 故無立即問題，但 ADR-0001 rev.5 delta 為必須
-- Spike 未開放 Roll ± → BR4 (Tripod) / RS4 / LS4 之部分 fixed states 可能無法透過 Yaw + Pitch + Flip 到達（自由 polycube 旋轉群覆蓋性未證明）；spike 期若發生「玩家想不出 legal 旋轉序列」需回頭於 ADR-0004 rev.2 開放 Roll ± 甚至加入「絕對旋轉狀態選擇」快捷
+- Spike 未開放 Roll ±，於**數學上仍可達所有 fixed states**：`{Rx(±90°), Rz(±90°)}` = {Pitch, Yaw} 已生成完整八面體旋轉群 O(24)；ADR-0002 §2.3 之 BR4=8 / RS4=12 / LS4=12 fixed states 皆可由 Yaw + Pitch 序列到達，`Flip = Ry(180°)` 為冗餘便利快捷（可由 Yaw + Pitch 合成，例：`Ry(180) = Rz(90)·Rx(180)·Rz(-90)`）。實際 UX 風險為「玩家難以規劃 3–4 步旋轉序列」而非狀態不可達；若 spike 期玩家自報「找不到旋轉」比例高，於 ADR-0004 rev.2 開放 Roll ± 以縮短序列長度
 - DAS 250 ms / 50 ms 為初始猜值；playtest 後可能收斂為 200/40 或 300/60
 - Gamepad 部分為 skeleton；spike 期若無法排入實作，行動端支援延到 v2
 
@@ -324,6 +328,15 @@ export const DAS_REPEAT_RATE_MS = 50 as const;
 - 依 LA4 verdict，本 ADR 若通過正確性 review，正式合入
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.2 — 2026-07-22 · LA4 round-1 review PASS (0 blocking)；修 3 Should + 2 Nit + status → Accepted
+
+- **S1** (§2.8)：rebinding 方向敘述改寫 — 明確禁止「1 key → 多 action」（破壞 replay 決定論），明確允許「1 action ← 多 key」（alias）
+- **S2** (§2.3)：Pause / Restart 於 replay 之機制明寫 — 兩者為 UX 系統動作，**不錄入** replay stream；Pause 停 tick 使錄影本身無 gap；Restart 語意為錄影邊界
+- **S3** (§2.2)：Flip 之數學 rationale 錯誤修正 — 只有 `2 × RotateRollPos = Ry(180°) = Flip`；`2 × RotatePitchPos = Rx(180°) ≠ Flip`（八面體群 O 中 Rx180 ≠ Ry180）。原稿誤寫「pitch/roll ±90° 兩次」
+- **N1** (§4)：旋轉群覆蓋性敘述修正 — `{Rx(±90°), Rz(±90°)}` 已生成完整 O(24)，spike 期 Yaw+Pitch 即可到達所有 fixed states；Flip 為冗餘便利快捷。UX 風險為「序列長」，非「狀態不可達」
+- **N2** (§2.5 pt5)：試探表加註「候選之一，非預設；具體鍵位待 playtest rev.2 鎖定」
+- LA4 review 記錄：`brain get oab/adr/0004-review-round1`
 
 ### rev.1 — 2026-07-22
 
