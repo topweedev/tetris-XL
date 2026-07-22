@@ -23,6 +23,7 @@ export default [
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tsparser,
+      globals: { document: 'readonly', console: 'readonly', process: 'readonly' },
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
@@ -91,6 +92,7 @@ export default [
     files: ['vite.config.ts', 'eslint.config.js', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: {
+        document: 'readonly',
         process: 'readonly',
         console: 'readonly',
         __dirname: 'readonly',

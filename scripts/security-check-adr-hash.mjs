@@ -8,7 +8,6 @@
 // Additionally: emit the hash so humans can eyeball it in CI logs (helps
 // when debugging "why did my replay stop loading?").
 
-import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 

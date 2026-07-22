@@ -17,5 +17,4 @@ const commitSha = import.meta.env.__COMMIT_SHA__;
 
 app.textContent = 'tetris-XL scaffolding — real bootstrap arrives in spike-phase PR';
 
-// eslint-disable-next-line no-console
 console.info('[tetris-XL] adrHash:', adrHash, '· build:', buildTime, '· commit:', commitSha);
