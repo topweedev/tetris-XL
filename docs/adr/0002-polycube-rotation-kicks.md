@@ -111,6 +111,8 @@ function canonicalKey(cells: Cell[]): string {
 
 ### 2.4 Wall / Floor-kick 偏移表
 
+本檢查與 §2.5 spawn-kick 遵守 ADR-0001 §2.4.4 的 spawn 緩衝區規則。
+
 旋轉指令流程：
 
 ```
@@ -118,7 +120,7 @@ function canonicalKey(cells: Cell[]): string {
 2. 對每個 kick 偏移 (dx, dy, dz)（自 offsets[direction] 依序）:
      - 將 piece anchor 加上 (dx, dy, dz)
      - 檢查所有 cell 是否位於 x∈[0,4], y∈[0,4], z∈[0,11 + pieceMaxDz]
-     - 對 z∈[0,11] 的 cell，確認 `board[idx(x,y,z)] == 0`；z∈[12,11 + pieceMaxDz] 為 spawn 緩衝區，不寫入 board，也不讀取 board
+     - 對 `z ∈ [0,11]` 的 cell，確認 `board[idx(x,y,z)] == 0`；`z > 11` 的 cell 只做邊界檢查，不查 board。`z∈[12,11 + pieceMaxDz]` 為 spawn 緩衝區，不寫入 board，也不讀取 board
      - 若通過 → 提交旋轉並提交 anchor 偏移，回傳 success
 3. 全部 offsets 失敗 → 保留原 rotationStateId 與原 anchor（旋轉無效）
 ```
@@ -242,6 +244,8 @@ export const POLYCUBE_DEFS: Record<TypeId, PolycubeDef> = {
 - **依 LA5 verdict**，本 ADR 若通過 LA3 review，正式合入。
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.2 — 2026-07-22 · 依 LA3 round-1 review 修 3 blocker (§2.1 LS4 正規化 / §2.2 origin-anchor 語意 / §2.4 z 上界含 spawn 緩衝)
 
 ### rev.1 — 2026-07-22
 初稿。依 ADR-0001 rev.4 §2.2 / §2.4.3 / §2.4.4 展開。
