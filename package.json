@@ -1,0 +1,40 @@
+{
+  "name": "tetris-xl",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "5x5x12 3D fallout - vanilla TS + three.js game",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "security-check:eval": "node scripts/security-check-eval.mjs",
+    "security-check:csp": "node scripts/security-check-csp.mjs",
+    "security-check:env": "node scripts/security-check-env.mjs",
+    "security-check:adr-hash": "node scripts/security-check-adr-hash.mjs"
+  },
+  "dependencies": {
+    "three": "0.160.1",
+    "zod": "3.23.8",
+    "idb": "8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/three": "0.160.0",
+    "@typescript-eslint/eslint-plugin": "8.18.2",
+    "@typescript-eslint/parser": "8.18.2",
+    "eslint": "9.17.0",
+    "typescript": "5.7.2",
+    "vite": "6.0.6",
+    "vitest": "2.1.8"
+  }
+}

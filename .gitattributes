@@ -1,0 +1,36 @@
+# Enforce LF endings for files whose byte content feeds into build-time hashes.
+# Per ADR-0006 §2.3: adrHash is sha256 over the raw bytes of docs/adr/*.md
+# concatenated. On Windows with core.autocrlf=true, checkouts of these files
+# would land as CRLF, changing the sha256 and breaking cross-platform hash
+# stability. Pin these files as `text eol=lf` so the working tree always has
+# LF endings regardless of platform.
+
+# Canonical LF for anything used in the adrHash computation
+docs/adr/*.md   text eol=lf
+
+# Diff-friendly for markdown
+docs/adr/*.md   diff=markdown
+docs/*.md       diff=markdown
+*.md            diff=markdown
+
+# Source/config files stay text
+*.ts            text
+*.tsx           text
+*.js            text
+*.mjs           text
+*.cjs           text
+*.json          text
+*.yml           text
+*.yaml          text
+*.html          text
+*.css           text
+
+# Binary assets (if we later add any)
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary

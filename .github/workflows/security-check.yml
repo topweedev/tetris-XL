@@ -1,0 +1,68 @@
+name: security-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# All jobs run without network access to production secrets.
+# Per ADR-0006 §2.6 F4, no repo secrets are injected into any build step.
+permissions:
+  contents: read
+
+concurrency:
+  group: security-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval-grep:
+    name: F1 no-eval / no-new-Function
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Ensure text files match .gitattributes eol=lf on the runner too.
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/security-check-eval.mjs
+
+  csp-check:
+    name: F5 CSP directives present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/security-check-csp.mjs
+
+  env-whitelist:
+    name: F4 import.meta.env whitelist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/security-check-env.mjs
+
+  adr-hash-consistency:
+    name: §5 adrHash deterministic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure LF endings for ADRs (matches .gitattributes)
+        run: |
+          for f in docs/adr/*.md; do
+            if grep -lU $'\r' "$f" >/dev/null 2>&1; then
+              echo "::error file=$f::CRLF detected — .gitattributes eol=lf may not have applied"
+              exit 1
+            fi
+          done
+      - run: node scripts/security-check-adr-hash.mjs
