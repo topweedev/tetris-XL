@@ -1,7 +1,7 @@
 ---
 title: ADR-0002 Polycube Rotation Kicks
 type: decision
-status: proposed
+status: accepted
 adr_id: "0002"
 repo: topweedev/tetris-XL
 path: docs/adr/0002-polycube-rotation-kicks.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, polycube, rotation, wall-kick, floor-kick]
 
 # ADR-0002: Polycube 集合、旋轉正規化與 Kick 偏移表
 
-- 狀態：Proposed
+- 狀態：Accepted
 - 日期：2026-07-22
 - 決策者：專案發起團隊
 - 相關文件：ADR-0001（rev.4）§2.2、§2.4.3、§2.4.4
@@ -48,22 +48,23 @@ ADR-0001 rev.4 已定義：
 | 4-cell | `T4` | T-tetracube (planar) | 三直線 + 中央垂直 | `(0,0,0), (1,0,0), (2,0,0), (1,1,0)` |
 | 4-cell | `S4` | S/Z-tetracube (planar) | 錯位對 | `(0,0,0), (1,0,0), (1,1,0), (2,1,0)` |
 | 4-cell | `RS4` | Right-screw tetracube (chiral 3D) | 螺旋，右手 | `(0,0,0), (1,0,0), (1,1,0), (1,1,1)` |
-| 4-cell | `LS4` | Left-screw tetracube (chiral 3D) | 螺旋，左手（`RS4` 之鏡像） | `(0,0,0), (1,0,0), (1,1,0), (1,1,-1)` |
+| 4-cell | `LS4` | Left-screw tetracube (chiral 3D) | 螺旋，左手（`RS4` 之鏡像） | `(0,0,1), (1,0,1), (1,1,1), (1,1,0)` |
 | 4-cell | `BR4` | Branch / Tripod tetracube (3D) | 三軸各出一顆 + 中央 | `(0,0,0), (1,0,0), (0,1,0), (0,0,1)` |
 
 共 **12 種自由 polycube**（1 + 1 + 2 + 8）。實作以 `typeId` 短名為鍵。展開所有固定旋轉狀態後，總計 fixed polycubes 數 ≈ 1 + 3 + 3 + 12 + ... = **依 §2.3 演算法產生**，實測時 assert 對應 OEIS 或已知計數。
 
-### 2.2 `origin`（旋轉樞紐）慣例
+### 2.2 `origin`（旋轉樞紐）與 `anchor` 慣例
 
-- `origin` 為 piece 局部座標系中的**幾何質心的整數近似**：
+- 旋轉表儲存的每個 fixed state，其 `cells` 都是依 §2.3 `normalize()` 後的座標，亦即 `min(x,y,z) = (0,0,0)`；這組座標稱為該 state 的 **local frame**。
+- 每個 fixed state 另儲存該 state 的 `origin`（旋轉樞紐在其 local frame 中的位置）。它可不是 `(0,0,0)`，因為正規化平移會隨旋轉搬移質心。
+- `origin` 由該 state 的幾何質心取整數近似：
   ```
   origin = round( sum(cells) / cellCount )
   ```
-- 對稱時可能有多個候選整數點；以「x 最小、y 最小、z 最小」的字典序決斷（deterministic）。
-- 旋轉數學：`cells[i]_new = R * (cells[i] - origin) + origin`，其中 `R ∈ SO_24`（立方體旋轉群 24 元素）。因 pivot 為整數，旋轉後座標仍為整數。
-- 若旋轉後任一 cell 出現越界（`x < 0` 或 `x > 4` 或 y/z 類似），先做 §2.4 kick；kick 全失敗才保留原態。
-
-`origin` 於預先展開旋轉表時**不變**（每個固定狀態記錄的是「相對 origin」的 cells 位置），tick 時只需維護 piece 的**世界座標 anchor**（即 origin 在場地座標的位置）。
+  對稱時若有多個候選整數點，以「x 最小、y 最小、z 最小」的字典序決斷（deterministic）。
+- 世界座標只維護一個 `anchor: Int8Array(3)`，表示該 state local frame 的 `(0,0,0)` 對應的場地座標；因此 `worldCell[i] = anchor + cells[i]`。
+- 載入時展開旋轉仍使用 `cells[i]_new = R * (cells[i] - origin) + origin`，其中 `R ∈ SO_24`；此公式**僅用於載入時產生旋轉表**，不是 tick 時的即時運算。tick 時查詢下一個 `rotationStateId`，並依 §2.6 更新 `anchor`。
+- 旋轉切換時，先取 `origin_cur` 與 `origin_new`，令 `anchor_new = anchor_cur + (origin_cur - origin_new)`，使玩家感覺 pivot 不跳；再於 `anchor_new` 上疊加 §2.4 的 kick `(dx,dy,dz)`。kick 全失敗則保留原 rotation state 與原 anchor。
 
 ### 2.3 旋轉正規化演算法
 
@@ -110,13 +111,16 @@ function canonicalKey(cells: Cell[]): string {
 
 ### 2.4 Wall / Floor-kick 偏移表
 
+本檢查與 §2.5 spawn-kick 遵守 ADR-0001 §2.4.4 的 spawn 緩衝區規則。
+
 旋轉指令流程：
 
 ```
 1. 計算 target rotationStateId 對應之 cells（查表）
 2. 對每個 kick 偏移 (dx, dy, dz)（自 offsets[direction] 依序）:
      - 將 piece anchor 加上 (dx, dy, dz)
-     - 檢查所有 cell 是否位於 x∈[0,4], y∈[0,4], z∈[0,11] 且 board[idx] == 0
+     - 檢查所有 cell 是否位於 x∈[0,4], y∈[0,4], z∈[0,11 + pieceMaxDz]
+     - 對 `z ∈ [0,11]` 的 cell，確認 `board[idx(x,y,z)] == 0`；`z > 11` 的 cell 只做邊界檢查，不查 board。`z∈[12,11 + pieceMaxDz]` 為 spawn 緩衝區，不寫入 board，也不讀取 board
      - 若通過 → 提交旋轉並提交 anchor 偏移，回傳 success
 3. 全部 offsets 失敗 → 保留原 rotationStateId 與原 anchor（旋轉無效）
 ```
@@ -142,7 +146,7 @@ kickOffsets = [
 ]
 ```
 
-共 **14 個 candidate**。5×5 井道空間狹小、4-cell piece 佔用比例高，14 個涵蓋率經 spike 期驗證後可裁剪。
+`pieceMaxDz` 是該 `typeId` 的最大 z 範圍（載入時計算並固定）；其最大值為 3，因此旋轉檢查的上界最多為 `z=14`。共 **14 個 candidate**。5×5 井道空間狹小、4-cell piece 佔用比例高，14 個涵蓋率經 spike 期驗證後可裁剪。
 
 **設計原則**：
 - 不含 `(0, 0, -1)`：向井底頂進沒有物理意義（重力方向）。
@@ -240,6 +244,10 @@ export const POLYCUBE_DEFS: Record<TypeId, PolycubeDef> = {
 - **依 LA5 verdict**，本 ADR 若通過 LA3 review，正式合入。
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.3 — 2026-07-22 · 通過 review：LA3 round-1 正確性 PASS、LA5-substitute (LA1 代審) round-1 安全/簡化 PASS；status → Accepted。8 條非-blocking SUGGEST 記於 `brain get oab/adr/0002-review-round2-la5-sub`，留待 rev.4 或 spike 期。
+
+### rev.2 — 2026-07-22 · 依 LA3 round-1 review 修 3 blocker (§2.1 LS4 正規化 / §2.2 origin-anchor 語意 / §2.4 z 上界含 spawn 緩衝)
 
 ### rev.1 — 2026-07-22
 初稿。依 ADR-0001 rev.4 §2.2 / §2.4.3 / §2.4.4 展開。
