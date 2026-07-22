@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, persistence, replay, localstorage, url-query, adrhash, sc
 
 # ADR-0006: 持久化與 Replay 格式（localStorage / URL / stream schema / adrHash / 安全）
 
-- 狀態：Accepted
+- 狀態：Accepted（rev.3；rev.2 為 LA4 round-1 review 落實後之定案；rev.3 為 upstream delta）
 - 日期：2026-07-22
 - 決策者：專案發起團隊
 - 相關文件：
@@ -515,7 +515,7 @@ export const ReplayStreamSchema = z.object({
 - `connect-src 'none'`：明確禁止一切 outbound fetch（`fetch` / `XMLHttpRequest` / `WebSocket`）；本作為完全離線 SPA
 - `object-src 'none'`：禁 `<object>` / `<embed>` / `<applet>`（避免舊瀏覽器 fallback 之 plugin exec）
 - `frame-src 'none'` + `frame-ancestors 'none'`：禁 iframe 內嵌與被嵌（防 clickjacking 與惡意 iframe 注入）
-- `style-src 'unsafe-inline'`：因 three.js / vanilla UI 初期需 inline style；後續可收緊為 nonce-based
+- `style-src 'unsafe-inline'`：因 three.js / vanilla UI 初期需 inline style；spike 期以 `'unsafe-inline'` 換效率。**rev.3 target 已更新（per ADR-0007 rev.3 §2.7）：收緊為 `style-src 'self'`（不含 nonce）**，前提是遵循 ADR-0007 §2.7 之 React 側禁用 `style={}` prop + three.js 側 `WebGLRenderer({ canvas })` + `setSize(w, h, false)` 硬規則。此 rev.3 target 取代原 rev.2 之「nonce-based」路徑（無 nonce plumbing 更簡單且更嚴格）
 - 於 spike phase build 時驗證 CSP 未被繞過（無 `eval`, 無 outbound；F1/F4 交叉）
 
 **F6 · localStorage 存取層封裝**：
@@ -751,7 +751,7 @@ assert(state.fsmState === 'GAME_OVER' || footer.outcome !== 0, `outcome mismatch
 - **允許 replay 跨 adrHash 播放（warning-only）**：使用者體驗較友善，但可能導致以錯誤 gravity / kick 表播放使 replay 結果詭異；已否決，嚴格 assert
 - **URL query 使用短連結服務**：需 outbound API 呼叫、需 token 管理；違反 F4 CI 硬規則。已否決；長 replay 走檔案下載
 - **schema migration 自動化（v1 → v2 → v3 chain）**：post-spike 才有意義；spike 期採 fallback 已足
-- **CSP 完全 lockdown（含 `style-src 'self'`）**：three.js 於 build 時可能仍需 inline style；spike 期以 `'unsafe-inline'` 換效率，後續 rev.2 收緊
+- **CSP 完全 lockdown（含 `style-src 'self'`）**：three.js 於 build 時可能仍需 inline style；spike 期以 `'unsafe-inline'` 換效率。**於 rev.3 已改採此路徑**（per ADR-0007 rev.3 §2.7 之 three.js integration rules 使 `'self'`-only 可行；不引入 nonce plumbing）
 - **Replay 儲存於 localStorage**：`localStorage` 語意為小型 key-value（本專案自訂單 key ≤ 4 KiB），60 min gzip replay ~400 KiB (base64 後 ~533 KiB) 遠超此上限；亦無 quota exceeded 之明確例外可捕。已於本 ADR rev.2 改採 IndexedDB blob store（§2.1 L1b）
 - **`adrHash` 只截 8 bytes（16 hex chars）**：碰撞率仍在 ~2^-32；為與現代 hash 慣例對齊（Git commit 短 hash 亦 8-10 hex），採 16 bytes / 32 hex（雙倍安全邊際）
 
@@ -779,7 +779,7 @@ assert(state.fsmState === 'GAME_OVER' || footer.outcome !== 0, `outcome mismatch
 ### 未決 / 交由 spike 驗證
 
 - 典型 replay 大小分佈（5 min / 15 min / 60 min）→ 決定 `MAX_URL_REPLAY_BASE64` 是否需調整
-- CSP `style-src` 是否可收緊為 nonce-based（需視 three.js 用法）
+- ~~CSP `style-src` 是否可收緊為 nonce-based~~（已於 rev.3 決定：**不採 nonce**；改採 `style-src 'self'` per ADR-0007 rev.3 §2.7；three.js integration rules 使無需 inline style）
 - `adrHash` 涵蓋清單於 ADR-0007+ 加入時之升 schemaVersion 策略
 - Rebinding schema 於 gamepad rebind（ADR-0004 §2.6 未列 spike）落地時之擴充：`bindings` 陣列是否需支援 `gamepadButton: number` 欄位
 - `outcome` 之後續 enum（3-255）之使用（例：`user_disconnected`, `crashed`）
@@ -839,6 +839,20 @@ assert(state.fsmState === 'GAME_OVER' || footer.outcome !== 0, `outcome mismatch
 - CI job `adr-hash-consistency`：build 兩次，assert `__ADR_HASH__` 相同（防 non-deterministic build）
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.3 — 2026-07-22（upstream delta）
+
+依 ADR-0007 rev.3 §2.7 之落地，本 ADR §2.6 F5 之 CSP 收緊 target 由 rev.2 之「nonce-based」正式改為 **`style-src 'self'`（無 nonce）**。本 rev 為 upstream-driven delta；不觸發新 review round：
+
+- **§2.6 F5 · `style-src` target**：從「後續可收緊為 nonce-based」改為「rev.3 target：`style-src 'self'`（per ADR-0007 rev.3 §2.7）」。條件：遵循 ADR-0007 §2.7 之 React 側禁 `style={}` prop + three.js 側之 `WebGLRenderer({ canvas })` + `setSize(w, h, false)` 硬規則。**不引入 nonce plumbing**（更簡單 + 更嚴格）
+- **§3 alternatives · CSP 完全 lockdown**：既有條目更新為「於 rev.3 已改採此路徑」
+- **§4 未決項 · CSP nonce-based**：既有問題移除（已 resolved：不採 nonce，改採 `'self'`-only）
+
+**verdict**：本 rev 屬 upstream-driven delta；不觸發新 review round。ADR-0007 rev.3 已於獨立 PR (#11) merged；本 rev 於下一 PR (ADR-0001 rev.6 + ADR-0006 rev.3 delta) 合併。
+
+**status**：Accepted 維持不變。
+
+**落地 timing 註記**：實際 CSP meta 之修改（`index.html` 之 `content` 屬性移除 `'unsafe-inline'`）於 M8 之 UI scaffold 落地時同步執行；本 rev 僅正式化決策。
 
 ### rev.2 — 2026-07-22
 
