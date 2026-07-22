@@ -190,7 +190,7 @@ lineScore(n, level) = BASE_SCORE[n] × level
 
 | 動作 | 每格分數 | 說明 |
 |------|----------|------|
-| 軟降 (`Down` 按住) | `1` | 玩家主動加速下墜；不受關卡倍率影響 |
+| 軟降（`Down` 按住之草擬佔位；per ADR-0004 rev.2 §2.4 已鎖定於 `LShift`） | `1` | 玩家主動加速下墜；不受關卡倍率影響 |
 | 硬降 (`Space`) | `2` | 一次結算，`rowsFallen × 2` 加至本 lock 的分數 |
 
 **軟降行為**：
@@ -308,6 +308,16 @@ export const SOFT_DROP_GRAVITY_MULT = 20 as const;
 - ADR-0005（計分細節：combo / T-spin 類 / back-to-back）將以此 §2.5 為基座擴充；本 ADR 明確**不涵蓋** combo 與 T-spin
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.3 — 2026-07-22（upstream delta）
+
+依 ADR-0004 rev.2 §5 明訂之修訂條款，收斂 §2.6 軟降計分表之「(Down 按住)」佔位語意；本 rev 為 upstream-driven delta：
+
+- **§2.6 軟降列**：「(Down 按住)」為 ADR-0003 起草時之草擬佔位鍵位；ADR-0004 rev.2 §2.4 已鎖定 `LShift` = `GameAction.SoftDrop`（4-方位平移需求使 `Down` 於 spike keymap 不再擔任軟降）。本 rev 採 **option A**：保留「軟降 UX 概念」語意（表格內描述玩家意圖之「持續加速下墜」），並補交叉引 ADR-0004 rev.2 §2.4 為權威鍵位對應；**不**改具體鍵位以維持本 ADR 之計分邏輯抽象於實體鍵位之上（`SOFT_DROP_POINTS_PER_ROW = 1`、`gravityStep_current > 1` 條件、`≤ 12` 上限皆不變）。
+
+**verdict**：本 rev 屬 upstream-driven delta，計分公式與行為皆不變；不觸發新 LA4 review round。
+
+**status**：Accepted 維持不變。
 
 ### rev.2 — 2026-07-22 · LA4 round-1 review PASS (0 blocking)；修 2 Should + 2 Nit + status → Accepted
 
