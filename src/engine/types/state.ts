@@ -22,3 +22,4 @@ export interface GameStateSnapshot {
   readonly holdSlot: TypeId | null; readonly piece: Piece | null;
   readonly nextPieces: readonly TypeId[];
 }
+// per ADR-0006 rev.3 §2.7; fields are the deterministic initial-state projection

@@ -1,11 +1,13 @@
-export type TypeId = 'M1' | 'D2' | 'I3' | 'V3' | 'I4' | 'O4' | 'L4' | 'T4' | 'S4' | 'RS4' | 'LS4' | 'BR4';
+// per ADR-0002 rev.3 §2.1–§2.2
+export type TypeId = number;
+export type RotationStateId = number;
 export type Vec3 = readonly [number, number, number];
 
 export interface Piece {
   readonly typeId: TypeId;
-  readonly rotationStateId: number;
+  readonly rotationStateId: RotationStateId;
   readonly anchor: Vec3;
   readonly origin: Vec3;
-  /** Twelve entries: xyz offsets, terminated by 0x7F sentinels. */
-  readonly cells: Int8Array;
+  readonly cellCount: number;
 }
+export const SENTINEL_CELL = 0x7f;
