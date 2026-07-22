@@ -10,9 +10,9 @@ tags: [adr, architecture, tetris-xl, tech-stack, game-loop]
 
 # ADR-0001: Tetris-XL 專案架構決策
 
-- 狀態：Accepted（rev.5 · upstream delta；rev.4 為 final review round）
+- 狀態：Accepted（rev.6 · upstream delta；rev.4 為 final review round）
 - 日期：2026-07-22
-- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2；rev.5 — upstream delta 收斂 §2.6 per ADR-0004 rev.2 §5、ADR-0005 rev.2 §5）
+- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2；rev.5 — upstream delta 收斂 §2.6 per ADR-0004 rev.2 §5、ADR-0005 rev.2 §5；rev.6 — upstream delta 註記 §2.1 UI 疊層條件已於 ADR-0007 rev.3 觸發）
 - 決策者：專案發起團隊
 - 相關文件：README.md
 
@@ -43,7 +43,7 @@ Tetris-XL 是一款以現代網頁技術實作的 3D 俄羅斯方塊遊戲。與
 | 建置工具 | **Vite** | 快速 HMR、原生 ESM、對 TS 支援佳 |
 | 語言 | **TypeScript (strict)** | 遊戲邏輯型別繁複（座標、旋轉矩陣、狀態機），靜態型別可降低錯誤 |
 | 狀態管理 | 自製有限狀態機 (FSM) + 事件匯流排（**匯流排僅用於 UI 邊界**） | 遊戲狀態單純且高頻；tick path 走純函式 / 直接呼叫，bus 只跨越「Game → UI」（score、line-clear、game-over 等通知） |
-| UI 疊層 | **MVP 採 vanilla DOM overlay**；若後續選單/設定膨脹再引入 React 18 + Tailwind | 首版 HUD/選單簡單，vanilla 足夠且無 bridge 複雜度；spike 期間刻意排除 React，驗證迴圈與渲染後再議 |
+| UI 疊層 | **MVP 採 vanilla DOM overlay**；若後續選單/設定膨脹再引入 React 18 + Tailwind（**條件已於 ADR-0007 rev.3 觸發並落地；本行保留為歷史脈絡**） | 首版 HUD/選單簡單，vanilla 足夠且無 bridge 複雜度；spike 期間刻意排除 React，驗證迴圈與渲染後再議 |
 | 3D 整合 | 手寫 three.js `Scene`，**不**採用 R3F | 遊戲主迴圈需精準控制 tick / render 順序，宣告式包裝反而增加負擔 |
 | 音效 | Web Audio API（薄封裝） | 低延遲、無需第三方依賴 |
 | 測試 | Vitest（單元）、Playwright（E2E 煙霧測試） | 與 Vite 原生整合 |
@@ -241,6 +241,16 @@ docs/
 
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.6 — 2026-07-22（upstream delta）
+
+依 ADR-0007 rev.3 §2.1 之落地觸發，收斂 §2.1 UI 疊層描述；本 rev 為 upstream-driven delta：
+
+- **§2.1 表格 UI 疊層列**：既有描述「MVP 採 vanilla DOM overlay；若後續選單/設定膨脹再引入 React 18 + Tailwind」補註「**條件已於 ADR-0007 rev.3 觸發並落地；本行保留為歷史脈絡**」。實際 UI stack 決策以 ADR-0007 為權威源。
+
+**verdict**：本 rev 屬 upstream-driven delta；不觸發新 review round。
+
+**status**：Accepted 維持不變（rev.4 仍為 final review round；rev.5、rev.6 為 upstream-driven 註記類 delta）。
 
 ### rev.5 — 2026-07-22（upstream delta）
 
