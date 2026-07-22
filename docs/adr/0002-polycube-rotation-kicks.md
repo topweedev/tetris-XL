@@ -1,7 +1,7 @@
 ---
 title: ADR-0002 Polycube Rotation Kicks
 type: decision
-status: proposed
+status: accepted
 adr_id: "0002"
 repo: topweedev/tetris-XL
 path: docs/adr/0002-polycube-rotation-kicks.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, polycube, rotation, wall-kick, floor-kick]
 
 # ADR-0002: Polycube 集合、旋轉正規化與 Kick 偏移表
 
-- 狀態：Proposed
+- 狀態：Accepted
 - 日期：2026-07-22
 - 決策者：專案發起團隊
 - 相關文件：ADR-0001（rev.4）§2.2、§2.4.3、§2.4.4
@@ -244,6 +244,8 @@ export const POLYCUBE_DEFS: Record<TypeId, PolycubeDef> = {
 - **依 LA5 verdict**，本 ADR 若通過 LA3 review，正式合入。
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.3 — 2026-07-22 · 通過 review：LA3 round-1 正確性 PASS、LA5-substitute (LA1 代審) round-1 安全/簡化 PASS；status → Accepted。8 條非-blocking SUGGEST 記於 `brain get oab/adr/0002-review-round2-la5-sub`，留待 rev.4 或 spike 期。
 
 ### rev.2 — 2026-07-22 · 依 LA3 round-1 review 修 3 blocker (§2.1 LS4 正規化 / §2.2 origin-anchor 語意 / §2.4 z 上界含 spawn 緩衝)
 
