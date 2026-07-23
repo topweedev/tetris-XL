@@ -37,7 +37,7 @@ import {
 
 const SPAWN_ANCHOR = [2, 2, 11] as const;
 const TICK_MS = 1000 / 60;
-const BASE_LINE_SCORE = Object.freeze([0, 100, 300, 700, 1500] as const);
+export const BASE_LINE_SCORE = Object.freeze([0, 100, 300, 700, 1500] as const);
 const ROTATION_SET = new Set<number>(ROTATION_ACTIONS);
 const TRANSLATION_DELTAS: Partial<Record<GameActionType, readonly [number, number, number]>> = {
   [GameAction.MoveXNeg]: [-1, 0, 0],
@@ -56,7 +56,9 @@ export function step(
   const orderedActions = validateAndSortActions(actions);
   let state = cloneGameState(input);
 
-  if (state.fsmState === 'GAME_OVER') return state;
+  if (orderedActions.includes(GameAction.Restart)) return withFsm(state, 'BOOT');
+  if (state.fsmState === 'GAME_OVER') return freezeState(state);
+  if (orderedActions.includes(GameAction.Pause)) return freezeState(state);
   if (state.fsmState === 'BOOT') return withFsm(state, 'SPAWN');
   if (state.fsmState === 'CLEARING') return withFsm(state, 'SPAWN');
   if (state.fsmState === 'SPAWN') return spawnPiece(state);
@@ -68,38 +70,18 @@ export function step(
   let gravityAcc = state.gravityAcc;
   let lockDelayTimer = state.lockDelayTimer;
   let lockResets = state.lockResets;
-  let score = state.score;
-
   const softDrop = orderedActions.includes(GameAction.SoftDrop);
-  if (state.fsmState === 'FALLING') {
-    const gravity = tickGravity({ ticksAccumulated: gravityAcc }, state.level, softDrop);
-    gravityAcc = gravity.state.ticksAccumulated;
-    if (gravity.shouldFallRow) {
-      const lowered = movePiece(nextPiece, 0, 0, -1);
-      if (pieceCollides(state, lowered)) {
-        nextFsm = 'GROUNDED';
-        lockDelayTimer = 0;
-      } else {
-        nextPiece = lowered;
-        if (softDrop && state.level <= 13) score += 1;
-      }
-    }
-  }
 
   for (const action of orderedActions) {
-    if (action === GameAction.Restart) return withFsm(state, 'BOOT');
     if (action === GameAction.Pause || action === GameAction.SoftDrop || action === GameAction.Hold) {
       continue;
     }
     if (action === GameAction.HardDrop) {
-      let rows = 0;
       while (true) {
         const lowered = movePiece(nextPiece, 0, 0, -1);
         if (pieceCollides(state, lowered)) break;
         nextPiece = lowered;
-        rows++;
       }
-      score += rows * 2;
       nextFsm = 'LOCKED';
       break;
     }
@@ -119,6 +101,20 @@ export function step(
         lockDelayTimer = reset.msElapsed;
         lockResets = reset.resetsUsed;
         if (reset.locked) nextFsm = 'LOCKED';
+      }
+    }
+  }
+
+  if (nextFsm !== 'LOCKED' && state.fsmState === 'FALLING') {
+    const gravity = tickGravity({ ticksAccumulated: gravityAcc }, state.level, softDrop);
+    gravityAcc = gravity.state.ticksAccumulated;
+    if (gravity.shouldFallRow) {
+      const lowered = movePiece(nextPiece, 0, 0, -1);
+      if (pieceCollides(state, lowered)) {
+        nextFsm = 'GROUNDED';
+        lockDelayTimer = 0;
+      } else {
+        nextPiece = lowered;
       }
     }
   }
@@ -147,9 +143,8 @@ export function step(
     softDropActive: softDrop,
     lockDelayTimer,
     lockResets,
-    score,
   };
-  return nextFsm === 'LOCKED' ? lockPiece(state) : state;
+  return nextFsm === 'LOCKED' ? lockPiece(state) : freezeState(state);
 }
 
 function spawnPiece(state: GameState): GameState {
@@ -169,7 +164,9 @@ function spawnPiece(state: GameState): GameState {
     lastRotationUsedKick: false,
     fsmState: 'FALLING',
   };
-  return pieceCollides(nextState, piece) ? { ...nextState, fsmState: 'GAME_OVER' } : nextState;
+  return freezeState(pieceCollides(nextState, piece)
+    ? { ...nextState, fsmState: 'GAME_OVER' }
+    : nextState);
 }
 
 function pieceTypeAt(seed: number, level: number, consumed: number): {
@@ -216,21 +213,21 @@ function lockPiece(state: GameState): GameState {
     const x = piece.anchor[0]! + cx;
     const y = piece.anchor[1]! + cy;
     const z = piece.anchor[2]! + cz;
-    if (z >= BOARD_D) return { ...state, board, fsmState: 'GAME_OVER' };
+    if (z >= BOARD_D) return freezeState({ ...state, board, fsmState: 'GAME_OVER' });
     setCellAt(board, x, y, z, Number(piece.typeId) + 1);
   }
   const cleared = clearFullLayers(board);
   const totalLayersCleared = state.totalLayersCleared + cleared.layersClearedCount;
   const lineCount = Math.min(cleared.layersClearedCount, 4);
-  return {
+  return freezeState({
     ...state,
-    board: cleared.newBoard,
+    board: cleared.board,
     piece: null,
     totalLayersCleared,
     level: levelFromLayers(totalLayersCleared),
     score: state.score + BASE_LINE_SCORE[lineCount]! * state.level,
     fsmState: cleared.layersClearedCount > 0 ? 'CLEARING' : 'SPAWN',
-  };
+  });
 }
 
 function rotatePiece(state: GameState, piece: Piece, action: RotationAction): Piece | null {
@@ -323,7 +320,11 @@ function requirePiece(state: GameState): Piece {
 }
 
 function withFsm(state: GameState, fsmState: FsmState): GameState {
-  return { ...state, fsmState };
+  return freezeState({ ...state, fsmState });
+}
+
+function freezeState(state: GameState): GameState {
+  return Object.freeze(state);
 }
 
 function validateAndSortActions(actions: readonly GameActionType[]): GameActionType[] {

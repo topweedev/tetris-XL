@@ -20,7 +20,7 @@ const ALLOWED = [
   ['FALLING', 'FALLING'], ['FALLING', 'GROUNDED'],
   ['GROUNDED', 'FALLING'], ['GROUNDED', 'GROUNDED'], ['GROUNDED', 'LOCKED'],
   ['LOCKED', 'CLEARING'], ['LOCKED', 'SPAWN'], ['LOCKED', 'GAME_OVER'],
-  ['CLEARING', 'SPAWN'], ['GAME_OVER', 'GAME_OVER'],
+  ['CLEARING', 'SPAWN'], ['GAME_OVER', 'BOOT'],
 ] as const satisfies readonly (readonly [FsmState, FsmState])[];
 
 describe('FSM transitions', () => {
@@ -35,7 +35,7 @@ describe('FSM transitions', () => {
   it.each([
     ['BOOT', 'GAME_OVER'], ['SPAWN', 'LOCKED'], ['FALLING', 'SPAWN'],
     ['GROUNDED', 'SPAWN'], ['LOCKED', 'FALLING'], ['CLEARING', 'GAME_OVER'],
-    ['GAME_OVER', 'BOOT'],
+    ['GAME_OVER', 'GAME_OVER'],
   ] as const satisfies readonly (readonly [FsmState, FsmState])[])('rejects %s -> %s', (from, to) => {
     expect(canTransition(from, to)).toBe(false);
     expect(() => advanceFsm(state(from), to)).toThrow(/invalid FSM transition/);

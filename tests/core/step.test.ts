@@ -57,7 +57,9 @@ describe('step', () => {
 
   it('applies translation, rotation, pause/hold no-op, and restart priority', () => {
     const spawned = step(baseState('SPAWN'), [], 0);
-    const moved = step(spawned, [GameAction.Pause, GameAction.Hold, GameAction.MoveXNeg], 1);
+    const paused = step(spawned, [GameAction.Pause, GameAction.MoveXNeg], 1);
+    expect(paused.piece!.anchor[0]).toBe(spawned.piece!.anchor[0]);
+    const moved = step(spawned, [GameAction.Hold, GameAction.MoveXNeg], 1);
     expect(moved.piece!.anchor[0]).toBe(spawned.piece!.anchor[0]! - 1);
     const rotated = step(moved, [GameAction.RotateYawPos], 2);
     expect(rotated.piece!.rotationStateId).not.toBeUndefined();
@@ -100,7 +102,7 @@ describe('step', () => {
     expect(locked.fsmState).toBe('SPAWN');
     expect(locked.piece).toBeNull();
     expect(locked.board.some((value) => value !== 0)).toBe(true);
-    expect(locked.score).toBeGreaterThan(0);
+    expect(locked.score).toBe(0);
   });
 
   it('transitions to and remains terminal GAME_OVER on spawn collision', () => {
@@ -110,7 +112,8 @@ describe('step', () => {
     }
     const over = step(input, [], 0);
     expect(over.fsmState).toBe('GAME_OVER');
-    expect(canonical(step(over, [GameAction.Restart], 1))).toBe(canonical(over));
+    expect(step(over, [], 1).fsmState).toBe('GAME_OVER');
+    expect(step(over, [GameAction.Restart], 1).fsmState).toBe('BOOT');
   });
 
   it('locks a grounded piece when lock delay expires', () => {
@@ -191,12 +194,15 @@ describe('step', () => {
     expect(second.anchor[0]).toBe(2);
   });
 
-  it('has a stable 1000-tick seed=42 golden score', () => {
-    let state = baseState('BOOT');
-    for (let tick = 0; tick < 1_000; tick++) {
-      const actions = state.fsmState === 'FALLING' ? [GameAction.HardDrop] : [];
-      state = step(state, actions, tick);
-    }
-    expect(state.score).toBe(78);
+  it('has a stable 1000-tick seed=42 empty-action golden score', () => {
+    const run = (): GameState => {
+      let state = baseState('BOOT');
+      for (let tick = 0; tick < 1_000; tick++) state = step(state, [], tick);
+      return state;
+    };
+    const first = run();
+    const second = run();
+    expect(first.score).toBe(0);
+    expect(canonical(first)).toBe(canonical(second));
   });
 });

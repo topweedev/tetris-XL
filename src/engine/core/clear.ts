@@ -3,14 +3,14 @@ import type { BoardArray } from '@engine/types';
 
 const LAYER_SIZE = BOARD_W * BOARD_H;
 
-export interface ClearLayersResult {
-  readonly newBoard: BoardArray;
+export interface ClearResult {
+  readonly board: BoardArray;
+  readonly clearedLayerIndices: readonly number[];
   readonly layersClearedCount: number;
-  readonly fullLayers: readonly number[];
 }
 
 /** Clone a board, remove every full z-layer, and compact higher layers downward. */
-export function clearFullLayers(board: BoardArray): ClearLayersResult {
+export function clearFullLayers(board: BoardArray): ClearResult {
   if (board.length !== BOARD_CELL_COUNT) {
     throw new RangeError(`board length must be ${BOARD_CELL_COUNT}, got ${board.length}`);
   }
@@ -35,8 +35,8 @@ export function clearFullLayers(board: BoardArray): ClearLayersResult {
   }
 
   return {
-    newBoard,
+    board: newBoard,
+    clearedLayerIndices: Object.freeze(fullLayers),
     layersClearedCount: fullLayers.length,
-    fullLayers: Object.freeze(fullLayers),
   };
 }

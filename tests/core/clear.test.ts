@@ -14,9 +14,9 @@ describe('clearFullLayers', () => {
     setCellAt(board, 1, 1, 1, 3);
     const result = clearFullLayers(board);
     expect(result.layersClearedCount).toBe(0);
-    expect(result.fullLayers).toEqual([]);
-    expect(result.newBoard).not.toBe(board);
-    expect(result.newBoard).toEqual(board);
+    expect(result.clearedLayerIndices).toEqual([]);
+    expect(result.board).not.toBe(board);
+    expect(result.board).toEqual(board);
   });
 
   it('clears one layer and shifts higher layers down', () => {
@@ -25,9 +25,9 @@ describe('clearFullLayers', () => {
     setCellAt(board, 2, 3, 1, 7);
     const result = clearFullLayers(board);
     expect(result.layersClearedCount).toBe(1);
-    expect(result.fullLayers).toEqual([0]);
-    expect(result.newBoard[idx(2, 3, 0)]).toBe(7);
-    expect(result.newBoard.slice(275).every((value) => value === 0)).toBe(true);
+    expect(result.clearedLayerIndices).toEqual([0]);
+    expect(result.board[idx(2, 3, 0)]).toBe(7);
+    expect(result.board.slice(275).every((value) => value === 0)).toBe(true);
     expect(board[idx(0, 0, 0)]).toBe(1);
   });
 
@@ -39,9 +39,21 @@ describe('clearFullLayers', () => {
     setCellAt(board, 1, 1, 4, 9);
     const result = clearFullLayers(board);
     expect(result.layersClearedCount).toBe(2);
-    expect(result.fullLayers).toEqual([1, 3]);
-    expect(result.newBoard[idx(0, 0, 1)]).toBe(8);
-    expect(result.newBoard[idx(1, 1, 2)]).toBe(9);
+    expect(result.clearedLayerIndices).toEqual([1, 3]);
+    expect(result.board[idx(0, 0, 1)]).toBe(8);
+    expect(result.board[idx(1, 1, 2)]).toBe(9);
+  });
+
+  it.each([3, 4])('clears %i adjacent layers', (count) => {
+    const board = createBoard();
+    for (let z = 0; z < count; z++) fillLayer(board, z);
+    setCellAt(board, 4, 4, count, 6);
+    const result = clearFullLayers(board);
+    expect(result.layersClearedCount).toBe(count);
+    expect(result.clearedLayerIndices).toEqual(
+      Array.from({ length: count }, (_value, index) => index),
+    );
+    expect(result.board[idx(4, 4, 0)]).toBe(6);
   });
 
   it('rejects malformed board length', () => {
