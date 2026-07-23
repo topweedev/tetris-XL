@@ -17,6 +17,34 @@ function digestDraws(seed: bigint, draws: number): bigint {
   return digest;
 }
 
+describe('splitmix64 canonical Vigna 2015 vectors', () => {
+  const CANONICAL_SEED_0 = [
+    0xe220_a839_7b1d_cdafn,
+    0x6e78_9e6a_a1b9_65f4n,
+    0x06c4_5d18_8009_454fn,
+    0xf88b_b8a8_724c_81ecn,
+    0x1b39_896a_51a8_749bn,
+  ] as const;
+
+  it('matches the published seed=0 sequence for 5 draws', () => {
+    let state = 0n;
+    for (const expectedMixed of CANONICAL_SEED_0) {
+      const result = nextU32(state);
+      expect(result.value).toBe(Number(expectedMixed >> 32n));
+      state = result.state;
+    }
+  });
+
+  it('threads state as a raw linear counter', () => {
+    const gamma = 0x9e37_79b9_7f4a_7c15n;
+    let state = 0n;
+    for (let draw = 1; draw <= 5; draw++) {
+      state = nextU32(state).state;
+      expect(state).toBe((BigInt(draw) * gamma) & U64_MASK);
+    }
+  });
+});
+
 describe('splitmix64', () => {
   it('matches 100 pre-recorded seed fixtures across 1,000 draws each', () => {
     expect(goldenFixture).toHaveLength(100);
@@ -25,26 +53,15 @@ describe('splitmix64', () => {
     }
   });
 
-  it.each([0n, U64_MASK, 1n, 0xdead_beefn])(
-    'draws 100 stable defined values from boundary seed %s', (seed) => {
-      let state = seed;
-      const firstRun: number[] = [];
-      for (let draw = 0; draw < 100; draw++) {
-        const result = nextU32(state);
-        expect(result.value).toBeTypeOf('number');
-        firstRun.push(result.value);
-        state = result.state;
-      }
-      state = seed;
-      const secondRun: number[] = [];
-      for (let draw = 0; draw < 100; draw++) {
-        const result = nextU32(state);
-        secondRun.push(result.value);
-        state = result.state;
-      }
-      expect(secondRun).toEqual(firstRun);
-    },
-  );
+  it.each([
+    [0n, 0x9e37_79b9_7f4a_7c15n],
+    [U64_MASK, 0x9e37_79b9_7f4a_7c14n],
+    [1n, 0x9e37_79b9_7f4a_7c16n],
+    [0xdead_beefn, 0x9e37_79ba_5df8_3b04n],
+  ] as const)('draws deterministic counter from seed %s', (seed, expectedState) => {
+    expect(nextU32(seed).state).toBe(expectedState);
+    expect(nextU32(seed)).toEqual(nextU32(seed));
+  });
 
   it('normalizes out-of-range bigint inputs to u64', () => {
     expect(advance(-1n)).toBe(advance(U64_MASK));
