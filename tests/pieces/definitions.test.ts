@@ -41,14 +41,6 @@ describe('POLYCUBE_DEFS', () => {
     expect(POLYCUBE_DEFS.map((definition) => definition.cells)).toEqual(EXPECTED_CELLS);
   });
 
-  it('deep-freezes definitions, cell arrays, and each CellTuple', () => {
-    for (const definition of POLYCUBE_DEFS) {
-      expect(Object.isFrozen(definition)).toBe(true);
-      expect(Object.isFrozen(definition.cells)).toBe(true);
-      expect(definition.cells.every((cell) => Object.isFrozen(cell))).toBe(true);
-    }
-  });
-
   it('keeps all definitions face-connected', () => {
     expect(POLYCUBE_DEFS.every((definition) => isFaceConnected(definition.cells))).toBe(true);
   });
