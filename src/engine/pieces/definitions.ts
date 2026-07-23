@@ -13,7 +13,12 @@ export interface PolycubeDef {
 }
 
 function def(typeId: TypeId, shortName: string, cells: readonly CellTuple[]): PolycubeDef {
-  return Object.freeze({ typeId, shortName, cellCount: cells.length, cells: Object.freeze(cells) });
+  return Object.freeze({
+    typeId,
+    shortName,
+    cellCount: cells.length,
+    cells: Object.freeze(cells.map((cell) => Object.freeze(cell)) as readonly CellTuple[]),
+  });
 }
 
 /** Twelve canonical polycube definitions indexed by typeId. */
