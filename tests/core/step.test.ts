@@ -88,6 +88,23 @@ describe('step', () => {
     expect(canonical(reversed)).toBe(canonical(canonicalOrder));
   });
 
+  it('uses canonical sub-order for translations regardless of input order', () => {
+    const piece = buildPiece(typeId(0));
+    piece.anchor.set([0, 2, 5]);
+    const input = baseState('FALLING', piece);
+    const reversed = step(
+      input,
+      [GameAction.MoveXPos, GameAction.MoveXNeg],
+      1,
+    );
+    const canonicalOrder = step(
+      input,
+      [GameAction.MoveXNeg, GameAction.MoveXPos],
+      1,
+    );
+    expect(canonical(reversed)).toBe(canonical(canonicalOrder));
+  });
+
   it('accepts a valid GameState and rejects malformed state boundaries', () => {
     const valid = baseState('FALLING', buildPiece(typeId(0)));
     expect(() => assertValidGameState(valid)).not.toThrow();
@@ -128,6 +145,11 @@ describe('step', () => {
       0,
     )).toThrow(RangeError);
     expect(() => step(baseState(), [], MAX_TICK + 1)).toThrow(RangeError);
+    expect(() => step(
+      baseState(),
+      Array.from({ length: MAX_ACTIONS_PER_TICK }, () => GameAction.MoveXPos),
+      MAX_TICK,
+    )).not.toThrow();
   });
 
   it('applies translation, rotation, pause/hold no-op, and restart priority', () => {
