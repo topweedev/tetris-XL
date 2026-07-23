@@ -46,6 +46,9 @@ describe('rotation graph', () => {
     const roll = ROTATION_AXIS_MATRICES[GameAction.RotateRollPos];
     expect(matrixKey(ROTATION_AXIS_MATRICES[GameAction.Flip]))
       .toBe(matrixKey(multiplyMatrices(roll, roll)));
+    const pitch = ROTATION_AXIS_MATRICES[GameAction.RotatePitchPos];
+    expect(matrixKey(ROTATION_AXIS_MATRICES[GameAction.Flip]))
+      .not.toBe(matrixKey(multiplyMatrices(pitch, pitch)));
     ROTATION_GRAPH.forEach((graph) => graph.forEach((edges) => {
       const once = edges[GameAction.RotateRollPos];
       expect(graph[once]![GameAction.RotateRollPos]).toBe(edges[GameAction.Flip]);

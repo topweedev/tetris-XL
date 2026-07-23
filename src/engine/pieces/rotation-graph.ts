@@ -1,7 +1,7 @@
 import { GameAction, rotationStateId } from '@engine/types';
 import type { RotationStateId } from '@engine/types';
 import { ROTATION_STATES, canonicalCellKey, normalizeCells, unpackCells } from './rotations';
-import { applyRotation, multiplyMatrices } from './so24';
+import { applyRotation, matrixKey, multiplyMatrices } from './so24';
 import type { Mat3 } from './so24';
 
 export const ROTATION_ACTIONS = Object.freeze([
@@ -49,6 +49,29 @@ function buildRotationGraph(): readonly (readonly RotationTransitions[])[] {
     }));
   }));
 }
+
+function assertValidAxisMatrices(): void {
+  const identityKey = '1,0,0;0,1,0;0,0,1';
+  const inversePairs = [
+    [GameAction.RotateYawNeg, GameAction.RotateYawPos],
+    [GameAction.RotatePitchNeg, GameAction.RotatePitchPos],
+    [GameAction.RotateRollNeg, GameAction.RotateRollPos],
+  ] as const;
+  for (const [negative, positive] of inversePairs) {
+    if (matrixKey(multiplyMatrices(
+      ROTATION_AXIS_MATRICES[negative], ROTATION_AXIS_MATRICES[positive],
+    )) !== identityKey) {
+      throw new Error('rotation axis matrices are not inverse');
+    }
+  }
+  const flipKey = matrixKey(ROTATION_AXIS_MATRICES[GameAction.Flip]);
+  const rollSquared = matrixKey(multiplyMatrices(Y_POS, Y_POS));
+  const pitchSquared = matrixKey(multiplyMatrices(X_POS, X_POS));
+  if (flipKey !== rollSquared) throw new Error('Flip must equal two positive Roll rotations');
+  if (flipKey === pitchSquared) throw new Error('Flip must differ from two positive Pitch rotations');
+}
+
+assertValidAxisMatrices();
 
 export const ROTATION_GRAPH = buildRotationGraph();
 
