@@ -100,4 +100,17 @@ describe('generateBag', () => {
     expect(() => generateBag(rngState(0n), 21)).toThrow(TypeError);
     expect(() => generateBag(rngState(0n), 1.5)).toThrow(TypeError);
   });
+
+  it.each([
+    ['NaN', NaN],
+    ['Infinity', Infinity],
+    ['-Infinity', -Infinity],
+    ['-0', -0],
+    ['null', null],
+    ['undefined', undefined],
+    ['boxed new Number(1)', new Number(1)],
+    ['object with valueOf', { valueOf: (): number => 5 }],
+  ] as const)('rejects special value level %s', (_label, value) => {
+    expect(() => generateBag(rngState(0n), value as unknown as number)).toThrow(TypeError);
+  });
 });

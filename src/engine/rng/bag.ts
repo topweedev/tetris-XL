@@ -1,3 +1,17 @@
+/**
+ * Weighted 7-bag piece generator (deterministic, non-CSPRNG).
+ *
+ * @warning Output is fully determined by (state, level). Caller MUST supply
+ *          RngState from a CSPRNG source (e.g. crypto.getRandomValues)
+ *          for ranked or competitive play. Do NOT accept user-provided seeds
+ *          in those contexts: attackers can brute-force extreme compositions.
+ *          Seed-entropy gating is the responsibility of P1.4 initBagFromSeed
+ *          and M7 replay validation, not this module.
+ *
+ * @see ADR-0003 rev.3 §2.4 / §2.7 (bag weights + boundary snapshot)
+ * @see ADR-0001 rev.5 §2.3 (7-bag variant)
+ * @see splitmix.ts (non-CSPRNG warning inherited)
+ */
 import { assertValidRngState, nextU32 } from '@engine/rng';
 import type { RngState } from '@engine/rng';
 import type { TypeId } from '@engine/types';
@@ -8,6 +22,12 @@ export const BAG_SIZE = 7 as const;
 export const MIN_LEVEL = 1 as const;
 
 export interface GenerateBagResult {
+  /**
+   * Raw splitmix64 counter after this bag (14 draws advanced).
+   * @warning Must not be exposed to UI, replay files, or GameStateSnapshot;
+   *          only the generated  should leave the engine. See the
+   *           warning in .
+   */
   readonly state: RngState;
   readonly bag: readonly TypeId[];
 }
