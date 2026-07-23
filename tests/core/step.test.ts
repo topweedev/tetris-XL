@@ -63,7 +63,8 @@ describe('step', () => {
     expect(moved.piece!.anchor[0]).toBe(spawned.piece!.anchor[0]! - 1);
     const rotated = step(moved, [GameAction.RotateYawPos], 2);
     expect(rotated.piece!.rotationStateId).not.toBeUndefined();
-    expect(step(rotated, [GameAction.HardDrop, GameAction.Restart], 3).fsmState).toBe('BOOT');
+    expect(canonical(step(rotated, [GameAction.HardDrop, GameAction.Restart], 3)))
+      .toBe(canonical(step(rotated, [GameAction.HardDrop], 3)));
   });
 
   it('covers grounded gravity contact and the reset-cap force-lock path', () => {
@@ -115,6 +116,17 @@ describe('step', () => {
     expect(step(over, [], 1).fsmState).toBe('GAME_OVER');
     expect(step(over, [GameAction.Restart], 1).fsmState).toBe('BOOT');
   });
+
+  it.each(['FALLING', 'GROUNDED'] as const)(
+    'ignores Restart outside GAME_OVER while continuing the normal %s tick',
+    (fsmState) => {
+      const piece = buildPiece(typeId(0));
+      piece.anchor[2] = fsmState === 'GROUNDED' ? 0 : 5;
+      const input = baseState(fsmState, piece);
+      expect(canonical(step(input, [GameAction.Restart], 1)))
+        .toBe(canonical(step(input, [], 1)));
+    },
+  );
 
   it('locks a grounded piece when lock delay expires', () => {
     const piece = buildPiece(typeId(0));

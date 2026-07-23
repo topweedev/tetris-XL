@@ -25,7 +25,7 @@ import type {
   Piece,
   TypeId,
 } from '@engine/types';
-import { levelFromLayers } from '@engine/difficulty';
+import { BASE_LINE_SCORE, levelFromLayers } from '@engine/difficulty';
 import {
   clearFullLayers,
   hasCollision,
@@ -37,7 +37,7 @@ import {
 
 const SPAWN_ANCHOR = [2, 2, 11] as const;
 const TICK_MS = 1000 / 60;
-export const BASE_LINE_SCORE = Object.freeze([0, 100, 300, 700, 1500] as const);
+export { BASE_LINE_SCORE } from '@engine/difficulty';
 const ROTATION_SET = new Set<number>(ROTATION_ACTIONS);
 const TRANSLATION_DELTAS: Partial<Record<GameActionType, readonly [number, number, number]>> = {
   [GameAction.MoveXNeg]: [-1, 0, 0],
@@ -56,8 +56,11 @@ export function step(
   const orderedActions = validateAndSortActions(actions);
   let state = cloneGameState(input);
 
-  if (orderedActions.includes(GameAction.Restart)) return withFsm(state, 'BOOT');
-  if (state.fsmState === 'GAME_OVER') return freezeState(state);
+  if (state.fsmState === 'GAME_OVER') {
+    return orderedActions.includes(GameAction.Restart)
+      ? withFsm(state, 'BOOT')
+      : freezeState(state);
+  }
   if (orderedActions.includes(GameAction.Pause)) return freezeState(state);
   if (state.fsmState === 'BOOT') return withFsm(state, 'SPAWN');
   if (state.fsmState === 'CLEARING') return withFsm(state, 'SPAWN');

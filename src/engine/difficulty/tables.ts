@@ -2,6 +2,7 @@ export const MAX_LEVEL = 20 as const;
 export const LAYERS_PER_LEVEL = 5 as const;
 export const LOCK_DELAY_RESET_CAP = 15 as const;
 export const SOFT_DROP_MIN_GRAVITY_STEP = 1 as const;
+export const BASE_LINE_SCORE = Object.freeze([0, 100, 300, 700, 1500] as const);
 
 const EXPECTED_GRAVITY_TABLE = [
   60, 48, 37, 28, 21, 16, 12, 9, 7, 5,
