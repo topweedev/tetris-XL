@@ -13,12 +13,16 @@ export const ROTATION_ACTIONS = Object.freeze([
 export type RotationAction = (typeof ROTATION_ACTIONS)[number];
 export type RotationTransitions = Readonly<Record<RotationAction, RotationStateId>>;
 
-const X_POS: Mat3 = [[1, 0, 0], [0, 0, -1], [0, 1, 0]];
-const X_NEG: Mat3 = [[1, 0, 0], [0, 0, 1], [0, -1, 0]];
-const Y_POS: Mat3 = [[0, 0, 1], [0, 1, 0], [-1, 0, 0]];
-const Y_NEG: Mat3 = [[0, 0, -1], [0, 1, 0], [1, 0, 0]];
-const Z_POS: Mat3 = [[0, -1, 0], [1, 0, 0], [0, 0, 1]];
-const Z_NEG: Mat3 = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]];
+function freezeMat3(matrix: Mat3): Mat3 {
+  return Object.freeze(matrix.map((row) => Object.freeze(row)) as unknown as Mat3);
+}
+
+const X_POS = freezeMat3([[1, 0, 0], [0, 0, -1], [0, 1, 0]]);
+const X_NEG = freezeMat3([[1, 0, 0], [0, 0, 1], [0, -1, 0]]);
+const Y_POS = freezeMat3([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]);
+const Y_NEG = freezeMat3([[0, 0, -1], [0, 1, 0], [1, 0, 0]]);
+const Z_POS = freezeMat3([[0, -1, 0], [1, 0, 0], [0, 0, 1]]);
+const Z_NEG = freezeMat3([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]);
 
 export const ROTATION_AXIS_MATRICES: Readonly<Record<RotationAction, Mat3>> = Object.freeze({
   [GameAction.RotateYawNeg]: Z_NEG,
@@ -27,7 +31,7 @@ export const ROTATION_AXIS_MATRICES: Readonly<Record<RotationAction, Mat3>> = Ob
   [GameAction.RotatePitchPos]: X_POS,
   [GameAction.RotateRollNeg]: Y_NEG,
   [GameAction.RotateRollPos]: Y_POS,
-  [GameAction.Flip]: multiplyMatrices(Y_POS, Y_POS),
+  [GameAction.Flip]: freezeMat3(multiplyMatrices(Y_POS, Y_POS)),
 });
 
 function buildRotationGraph(): readonly (readonly RotationTransitions[])[] {

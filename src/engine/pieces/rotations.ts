@@ -6,8 +6,20 @@ import { SO24, applyRotation } from './so24';
 
 export interface RotationState {
   readonly stateId: RotationStateId;
-  readonly cells: Int8Array;
-  readonly origin: Int8Array;
+  /**
+   * Packed cells (12 bytes, unused = SENTINEL_CELL). Shared canonical data —
+   * do not mutate. `Piece` / `PieceSnapshot` factory must `.slice()` or
+   * `Int8Array.from()` copy before returning to caller.
+   * @warning Int8Array cannot be Object.freeze'd (typed-array elements are
+   *          ArrayBuffer views); type-level Readonly + this warning is the
+   *          only defense. M2 FSM piece builders own runtime enforcement.
+   */
+  readonly cells: Readonly<Int8Array>;
+  /**
+   * Rotation pivot (length 3). Shared canonical data — do not mutate.
+   * Same immutability caveat as `cells`.
+   */
+  readonly origin: Readonly<Int8Array>;
   readonly cellCount: number;
 }
 
