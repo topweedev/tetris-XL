@@ -1,0 +1,402 @@
+[
+  {
+    "seed": "0",
+    "digest": "0x8834371f26be15fc"
+  },
+  {
+    "seed": "1",
+    "digest": "0xd282719348206506"
+  },
+  {
+    "seed": "2",
+    "digest": "0x57143c53889e32fa"
+  },
+  {
+    "seed": "3",
+    "digest": "0x079892c81b81c634"
+  },
+  {
+    "seed": "4",
+    "digest": "0x2b70f647ff96953f"
+  },
+  {
+    "seed": "5",
+    "digest": "0xf5de532a8fb9d50b"
+  },
+  {
+    "seed": "6",
+    "digest": "0x8e97d88a3292d653"
+  },
+  {
+    "seed": "7",
+    "digest": "0x0ab6e140bb8d403f"
+  },
+  {
+    "seed": "8",
+    "digest": "0xd4f32f68c1d99ac2"
+  },
+  {
+    "seed": "9",
+    "digest": "0x2c37e7283404119d"
+  },
+  {
+    "seed": "10",
+    "digest": "0x0927ea62c01c049c"
+  },
+  {
+    "seed": "11",
+    "digest": "0x19a74338354e7c38"
+  },
+  {
+    "seed": "12",
+    "digest": "0xac33537618813eb8"
+  },
+  {
+    "seed": "13",
+    "digest": "0xc49e9063eb468a04"
+  },
+  {
+    "seed": "14",
+    "digest": "0xfd1e1a3dbb82cd66"
+  },
+  {
+    "seed": "15",
+    "digest": "0xfc8b0b2b45726800"
+  },
+  {
+    "seed": "16",
+    "digest": "0xa178b7f774371640"
+  },
+  {
+    "seed": "17",
+    "digest": "0xbae18660e55bdcf9"
+  },
+  {
+    "seed": "18",
+    "digest": "0x51a1e81da731ebad"
+  },
+  {
+    "seed": "19",
+    "digest": "0x4f9975dab5c4c4a9"
+  },
+  {
+    "seed": "20",
+    "digest": "0xf3932f45a91dadb4"
+  },
+  {
+    "seed": "21",
+    "digest": "0x741f86e5e1d3d927"
+  },
+  {
+    "seed": "22",
+    "digest": "0xf84e6ef703b9dc3e"
+  },
+  {
+    "seed": "23",
+    "digest": "0xa819ca358c746a7e"
+  },
+  {
+    "seed": "24",
+    "digest": "0x9e2ba0c34af36122"
+  },
+  {
+    "seed": "25",
+    "digest": "0x667c142fbe6c7933"
+  },
+  {
+    "seed": "26",
+    "digest": "0x712d43d08a27034b"
+  },
+  {
+    "seed": "27",
+    "digest": "0x183864ece6f687a5"
+  },
+  {
+    "seed": "28",
+    "digest": "0x55c76469a1aecaf9"
+  },
+  {
+    "seed": "29",
+    "digest": "0xa83fd7ab9b2149a6"
+  },
+  {
+    "seed": "30",
+    "digest": "0xcd3de4eaa9176351"
+  },
+  {
+    "seed": "31",
+    "digest": "0x0a91c2e57886db7d"
+  },
+  {
+    "seed": "32",
+    "digest": "0x6e1801f3c6ea2a19"
+  },
+  {
+    "seed": "33",
+    "digest": "0x3549087b75201f83"
+  },
+  {
+    "seed": "34",
+    "digest": "0x175d773d19724ec3"
+  },
+  {
+    "seed": "35",
+    "digest": "0xd20c92412504fb09"
+  },
+  {
+    "seed": "36",
+    "digest": "0x0fe863c55c36d9ea"
+  },
+  {
+    "seed": "37",
+    "digest": "0xe49a08d83406322b"
+  },
+  {
+    "seed": "38",
+    "digest": "0x7a0126a38269b29c"
+  },
+  {
+    "seed": "39",
+    "digest": "0xd91f4d0680883abf"
+  },
+  {
+    "seed": "40",
+    "digest": "0xedc777e5e9432343"
+  },
+  {
+    "seed": "41",
+    "digest": "0x36dced59dbc6c91a"
+  },
+  {
+    "seed": "42",
+    "digest": "0x670a1f7cdebed132"
+  },
+  {
+    "seed": "43",
+    "digest": "0x8d1d0aba849c00f5"
+  },
+  {
+    "seed": "44",
+    "digest": "0xe2bb7754ed4e828a"
+  },
+  {
+    "seed": "45",
+    "digest": "0x937b814d68628673"
+  },
+  {
+    "seed": "46",
+    "digest": "0xf9fa109a90fb232a"
+  },
+  {
+    "seed": "47",
+    "digest": "0x50a3ccf03433fae1"
+  },
+  {
+    "seed": "48",
+    "digest": "0xa9cd8c4d275f69f7"
+  },
+  {
+    "seed": "49",
+    "digest": "0x5d3193f95ffd6724"
+  },
+  {
+    "seed": "50",
+    "digest": "0x010af41f8e4cd5f7"
+  },
+  {
+    "seed": "51",
+    "digest": "0x44f4a5a4fc4e5660"
+  },
+  {
+    "seed": "52",
+    "digest": "0xd934416c0c1b97c1"
+  },
+  {
+    "seed": "53",
+    "digest": "0xe502a1943dd17244"
+  },
+  {
+    "seed": "54",
+    "digest": "0xa7abf5ff98adcbf3"
+  },
+  {
+    "seed": "55",
+    "digest": "0x4019cd86f087207c"
+  },
+  {
+    "seed": "56",
+    "digest": "0x315dfd322464314a"
+  },
+  {
+    "seed": "57",
+    "digest": "0xbd590944f96e17c5"
+  },
+  {
+    "seed": "58",
+    "digest": "0x70dd0c80a33d9d1c"
+  },
+  {
+    "seed": "59",
+    "digest": "0x4a55438b0b11f06c"
+  },
+  {
+    "seed": "60",
+    "digest": "0x03d095641ebbf78a"
+  },
+  {
+    "seed": "61",
+    "digest": "0xe15dc27b7f149842"
+  },
+  {
+    "seed": "62",
+    "digest": "0xa0fa8051507b2f53"
+  },
+  {
+    "seed": "63",
+    "digest": "0x59460cc21b99b725"
+  },
+  {
+    "seed": "64",
+    "digest": "0x7856af69f81f8d49"
+  },
+  {
+    "seed": "65",
+    "digest": "0x2e0915e2a822c049"
+  },
+  {
+    "seed": "66",
+    "digest": "0x39edf89f668e5d20"
+  },
+  {
+    "seed": "67",
+    "digest": "0x9e2a6031905bbe95"
+  },
+  {
+    "seed": "68",
+    "digest": "0xcf33cb86004e01d5"
+  },
+  {
+    "seed": "69",
+    "digest": "0x4e34fca58dc163b4"
+  },
+  {
+    "seed": "70",
+    "digest": "0xc5ed39219d3f9dec"
+  },
+  {
+    "seed": "71",
+    "digest": "0xcd8eee3863eadc3c"
+  },
+  {
+    "seed": "72",
+    "digest": "0xa001b3d5ecabb395"
+  },
+  {
+    "seed": "73",
+    "digest": "0x51ae2af3d95860c9"
+  },
+  {
+    "seed": "74",
+    "digest": "0xceeec0f6c528b2fe"
+  },
+  {
+    "seed": "75",
+    "digest": "0xb62743d41d59badf"
+  },
+  {
+    "seed": "76",
+    "digest": "0x3d5ec71f5fc38f34"
+  },
+  {
+    "seed": "77",
+    "digest": "0xbbccd416a9881165"
+  },
+  {
+    "seed": "78",
+    "digest": "0x5358329834659378"
+  },
+  {
+    "seed": "79",
+    "digest": "0x32c63747d54c690f"
+  },
+  {
+    "seed": "80",
+    "digest": "0xbd296c96519d1dbf"
+  },
+  {
+    "seed": "81",
+    "digest": "0x8b1887ece5497028"
+  },
+  {
+    "seed": "82",
+    "digest": "0x530c226c8e25a63e"
+  },
+  {
+    "seed": "83",
+    "digest": "0x59316a03ef54498f"
+  },
+  {
+    "seed": "84",
+    "digest": "0x4a5d6bd0e9c3603d"
+  },
+  {
+    "seed": "85",
+    "digest": "0xaf6a758004f0e298"
+  },
+  {
+    "seed": "86",
+    "digest": "0xd4e00590db313eaa"
+  },
+  {
+    "seed": "87",
+    "digest": "0xee3dce826c01d237"
+  },
+  {
+    "seed": "88",
+    "digest": "0xf4696d348e8c1f0e"
+  },
+  {
+    "seed": "89",
+    "digest": "0x24fdf30565acd0b5"
+  },
+  {
+    "seed": "90",
+    "digest": "0x6a0213e701927c74"
+  },
+  {
+    "seed": "91",
+    "digest": "0xa028a3499b17af2b"
+  },
+  {
+    "seed": "92",
+    "digest": "0xcf743edb7986347c"
+  },
+  {
+    "seed": "93",
+    "digest": "0xb92f9cbc9abf8a42"
+  },
+  {
+    "seed": "94",
+    "digest": "0xa28380fcc090a48b"
+  },
+  {
+    "seed": "95",
+    "digest": "0xcd5f2f7fda022830"
+  },
+  {
+    "seed": "96",
+    "digest": "0x6bf52d1ba99b6e26"
+  },
+  {
+    "seed": "97",
+    "digest": "0x88c1465d873e6b0f"
+  },
+  {
+    "seed": "98",
+    "digest": "0x00fded5d14894b1a"
+  },
+  {
+    "seed": "99",
+    "digest": "0x43f253749392a1f3"
+  }
+]
