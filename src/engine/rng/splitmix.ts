@@ -1,3 +1,7 @@
+/**
+ * Deterministic splitmix64 generator (Vigna 2015).
+ * @see ADR-0003 rev.3 §2.4 and ADR-0006 rev.2 §2.7
+ */
 const U64_MASK = 0xffff_ffff_ffff_ffffn;
 const U32_SHIFT = 32n;
 const GAMMA = 0x9e37_79b9_7f4a_7c15n;

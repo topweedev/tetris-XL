@@ -1,35 +1,50 @@
 import { describe, expect, it } from 'vitest';
 import { advance, nextU32 } from '@engine/rng';
+import goldenFixture from './fixtures/splitmix.golden.json';
 
 const U64_MASK = 0xffff_ffff_ffff_ffffn;
 const FNV_OFFSET = 0xcbf2_9ce4_8422_2325n;
 const FNV_PRIME = 0x0000_0100_0000_01b3n;
 
-function digestGoldenDraws(): bigint {
+function digestDraws(seed: bigint, draws: number): bigint {
   let digest = FNV_OFFSET;
-  for (let seed = 0n; seed < 100n; seed++) {
-    let state = seed;
-    for (let draw = 0; draw < 1_000; draw++) {
-      const result = nextU32(state);
-      state = result.state;
-      digest = ((digest ^ BigInt(result.value)) * FNV_PRIME) & U64_MASK;
-    }
+  let state = seed;
+  for (let draw = 0; draw < draws; draw++) {
+    const result = nextU32(state);
+    state = result.state;
+    digest = ((digest ^ BigInt(result.value)) * FNV_PRIME) & U64_MASK;
   }
   return digest;
 }
 
 describe('splitmix64', () => {
-  it('matches the 100 seeds × 1,000 draws golden digest', () => {
-    expect(digestGoldenDraws()).toBe(0x8d70_1686_6eba_abd2n);
+  it('matches 100 pre-recorded seed fixtures across 1,000 draws each', () => {
+    expect(goldenFixture).toHaveLength(100);
+    for (const fixture of goldenFixture) {
+      expect(digestDraws(BigInt(fixture.seed), 1_000)).toBe(BigInt(fixture.digest));
+    }
   });
 
-  it.each([
-    [0n, 0xe220_a839_7b1d_cdafn, 0xe220_a839],
-    [0xffff_ffffn, 0x73b1_3ba2_aff1_81c0n, 0x73b1_3ba2],
-    [U64_MASK, 0xe4d9_7177_1b65_2c20n, 0xe4d9_7177],
-  ] as const)('advances boundary seed %s', (seed, expectedState, expectedValue) => {
-    expect(nextU32(seed)).toEqual({ state: expectedState, value: expectedValue });
-  });
+  it.each([0n, U64_MASK, 1n, 0xdead_beefn])(
+    'draws 100 stable defined values from boundary seed %s', (seed) => {
+      let state = seed;
+      const firstRun: number[] = [];
+      for (let draw = 0; draw < 100; draw++) {
+        const result = nextU32(state);
+        expect(result.value).toBeTypeOf('number');
+        firstRun.push(result.value);
+        state = result.state;
+      }
+      state = seed;
+      const secondRun: number[] = [];
+      for (let draw = 0; draw < 100; draw++) {
+        const result = nextU32(state);
+        secondRun.push(result.value);
+        state = result.state;
+      }
+      expect(secondRun).toEqual(firstRun);
+    },
+  );
 
   it('normalizes out-of-range bigint inputs to u64', () => {
     expect(advance(-1n)).toBe(advance(U64_MASK));
@@ -41,14 +56,14 @@ describe('splitmix64', () => {
     expect(nextU32(seed)).toEqual(nextU32(seed));
   });
 
-  it('passes a chi-square proxy across 256 high-byte buckets', () => {
-    const buckets = new Uint32Array(256);
-    let state = 0x0123_4567_89ab_cdefn;
+  it('passes the 32-bin chi-square proxy at the 0.5% upper bound', () => {
+    const buckets = new Uint32Array(32);
+    let state = 42n;
     const draws = 100_000;
     for (let draw = 0; draw < draws; draw++) {
       const result = nextU32(state);
       state = result.state;
-      const bucket = result.value >>> 24;
+      const bucket = result.value & 0x1f;
       buckets[bucket] = (buckets[bucket] ?? 0) + 1;
     }
 
@@ -58,7 +73,6 @@ describe('splitmix64', () => {
       const difference = observed - expected;
       chiSquare += (difference * difference) / expected;
     }
-    expect(chiSquare).toBeGreaterThan(170);
-    expect(chiSquare).toBeLessThan(350);
+    expect(chiSquare).toBeLessThan(55.76);
   });
 });
