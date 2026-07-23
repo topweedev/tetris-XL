@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_BAG_INDEX,
+  assertValidGameState,
   buildPiece,
   createBoard,
   setCellAt,
@@ -53,6 +55,43 @@ describe('step', () => {
     const second = step(input, [GameAction.SoftDrop, GameAction.MoveXNeg], 2);
     expect(canonical(first)).toBe(canonical(second));
     expect(canonical(input)).toBe(before);
+  });
+
+  it('deduplicates repeated actions and rejects non-number actions', () => {
+    const spawned = step(baseState('SPAWN'), [], 0);
+    const once = step(spawned, [GameAction.MoveXPos], 1);
+    const repeated = step(spawned, [GameAction.MoveXPos, GameAction.MoveXPos], 1);
+    expect(canonical(repeated)).toBe(canonical(once));
+    expect(() => step(
+      spawned,
+      ['5' as unknown as GameAction],
+      1,
+    )).toThrow(TypeError);
+  });
+
+  it('accepts a valid GameState and rejects malformed state boundaries', () => {
+    const valid = baseState('FALLING', buildPiece(typeId(0)));
+    expect(() => assertValidGameState(valid)).not.toThrow();
+
+    const malformed: readonly GameState[] = [
+      { ...valid, board: new Uint8Array(299) },
+      { ...valid, piece: { ...valid.piece!, cellCount: 5 } },
+      { ...valid, piece: { ...valid.piece!, cells: new Int8Array(11) } },
+      { ...valid, piece: { ...valid.piece!, origin: new Int8Array(2) } },
+      { ...valid, piece: { ...valid.piece!, anchor: new Int8Array(2) } },
+      { ...valid, piece: { ...valid.piece!, typeId: 12 as never } },
+      { ...valid, piece: { ...valid.piece!, rotationStateId: 24 as never } },
+      { ...valid, level: 21 },
+      { ...valid, bag: { ...valid.bag, index: MAX_BAG_INDEX + 1 } },
+      { ...valid, seed: -1 },
+      { ...valid, score: -1 },
+      { ...valid, totalLayersCleared: -1 },
+      { ...valid, fsmState: 'INVALID' as FsmState },
+    ];
+    for (const state of malformed) {
+      expect(() => assertValidGameState(state)).toThrow();
+      expect(() => step(state, [], 0)).toThrow();
+    }
   });
 
   it('applies translation, rotation, pause/hold no-op, and restart priority', () => {

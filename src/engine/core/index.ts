@@ -4,6 +4,7 @@ export { clearFullLayers } from './clear';
 export type { ClearResult } from './clear';
 export { advanceFsm, canTransition } from './fsm';
 export { BASE_LINE_SCORE, buildPiece, step } from './step';
+export { MAX_BAG_INDEX, assertValidGameState } from './state-guard';
 export { createGravityState, isSoftDropScoringEligible, tickGravity } from './gravity';
 export type { GravityState, GravityTickResult } from './gravity';
 export { createLockDelayState, resetLockDelay, tickLockDelay } from './lock-delay';

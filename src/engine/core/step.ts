@@ -34,6 +34,7 @@ import {
   tickGravity,
   tickLockDelay,
 } from '@engine/core';
+import { assertValidGameState, MAX_BAG_INDEX } from './state-guard';
 
 const SPAWN_ANCHOR = [2, 2, 11] as const;
 const TICK_MS = 1000 / 60;
@@ -52,6 +53,7 @@ export function step(
   actions: readonly GameActionType[],
   tick: number,
 ): GameState {
+  assertValidGameState(input);
   assertValidTick(tick);
   const orderedActions = validateAndSortActions(actions);
   let state = cloneGameState(input);
@@ -179,6 +181,11 @@ function pieceTypeAt(seed: number, level: number, consumed: number): {
   assertValidU32Seed(seed);
   if (!Number.isInteger(consumed) || consumed < 0) {
     throw new RangeError(`bag.index must be non-negative integer, got ${consumed}`);
+  }
+  if (consumed > MAX_BAG_INDEX) {
+    throw new RangeError(
+      `bag.index exceeds MAX_BAG_INDEX (${MAX_BAG_INDEX}): got ${consumed}`,
+    );
   }
   let rng = BigInt(seed);
   assertValidRngState(rng);
@@ -331,11 +338,22 @@ function freezeState(state: GameState): GameState {
 }
 
 function validateAndSortActions(actions: readonly GameActionType[]): GameActionType[] {
-  const validated = actions.map((action) => {
-    if (!isValidGameAction(Number(action))) throw new RangeError(`invalid GameAction: ${action}`);
-    return action;
-  });
-  return validated.sort((left, right) => actionPriority(left) - actionPriority(right));
+  const seen = new Set<GameActionType>();
+  const normalized: GameActionType[] = [];
+  for (const action of actions) {
+    if (typeof action !== 'number') {
+      throw new TypeError(
+        `action must be number GameAction, got ${typeof action}: ${String(action)}`,
+      );
+    }
+    if (!isValidGameAction(action)) {
+      throw new RangeError(`action not in GameAction enum: ${action}`);
+    }
+    if (seen.has(action)) continue;
+    seen.add(action);
+    normalized.push(action);
+  }
+  return normalized.sort((left, right) => actionPriority(left) - actionPriority(right));
 }
 
 function actionPriority(action: GameActionType): number {
