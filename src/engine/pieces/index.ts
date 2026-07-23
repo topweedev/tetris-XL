@@ -15,4 +15,4 @@ export type { RotationState } from './rotations';
 export { ROTATION_ACTIONS, ROTATION_AXIS_MATRICES, ROTATION_GRAPH } from './rotation-graph';
 export type { RotationAction, RotationTransitions } from './rotation-graph';
 export { KICK_OFFSETS, pieceMaxDz, assertValidKickOffsets } from './kick';
-export { SPAWN_KICK_OFFSETS } from './spawn-kick';
+export { SPAWN_KICK_OFFSETS, assertValidSpawnKickOffsets } from './spawn-kick';

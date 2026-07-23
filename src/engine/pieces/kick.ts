@@ -44,7 +44,9 @@ export function assertValidKickOffsets(offsets: readonly CellTuple[]): void {
     keys.add(key);
     if (Math.abs(dx) > 2 || Math.abs(dy) > 2) throw new Error(`kick offset exceeds well width: ${key}`);
     if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 4) throw new Error(`kick offset too large: ${key}`);
-    if (dx === 0 && dy === 0 && dz === -1) throw new Error('downward kick is forbidden');
+    if (dz !== 0 && dz !== 1) {
+      throw new Error('kick offset dz must be 0 or 1 per ADR-0002 §2.4: ' + key);
+    }
   }
 }
 

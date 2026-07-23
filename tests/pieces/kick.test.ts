@@ -34,6 +34,8 @@ describe('KICK_OFFSETS', () => {
     expect(() => assertValidKickOffsets(KICK_OFFSETS.slice(0, 13))).toThrow();
     expect(() => assertValidKickOffsets([...KICK_OFFSETS.slice(0, 13), KICK_OFFSETS[0]!])).toThrow();
     expect(() => assertValidKickOffsets([...KICK_OFFSETS.slice(0, 13), [3, 0, 0]])).toThrow();
+    expect(() => assertValidKickOffsets([...KICK_OFFSETS.slice(0, 13), [0, 0, 2]])).toThrow();
+    expect(() => assertValidKickOffsets([...KICK_OFFSETS.slice(0, 13), [1, 0, -1]])).toThrow();
   });
 });
 
