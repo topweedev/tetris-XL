@@ -2,6 +2,7 @@ import {
   assertValidU32Seed,
   assertValidRngState,
   generateBag,
+  initBagFromSeed,
 } from '@engine/rng';
 import type { RngState } from '@engine/rng';
 import {
@@ -12,6 +13,7 @@ import {
 } from '@engine/pieces';
 import type { CellTuple, RotationAction } from '@engine/pieces';
 import {
+  BOARD_CELL_COUNT,
   BOARD_D,
   GameAction,
   SENTINEL_CELL,
@@ -38,6 +40,8 @@ import { assertValidGameState, MAX_BAG_INDEX } from './state-guard';
 
 const SPAWN_ANCHOR = [2, 2, 11] as const;
 const TICK_MS = 1000 / 60;
+export const MAX_ACTIONS_PER_TICK = 32;
+export const MAX_TICK = 0x7fff_ffff;
 export { BASE_LINE_SCORE } from '@engine/difficulty';
 const ROTATION_SET = new Set<number>(ROTATION_ACTIONS);
 const TRANSLATION_DELTAS: Partial<Record<GameActionType, readonly [number, number, number]>> = {
@@ -55,12 +59,17 @@ export function step(
 ): GameState {
   assertValidGameState(input);
   assertValidTick(tick);
+  if (actions.length > MAX_ACTIONS_PER_TICK) {
+    throw new RangeError(
+      `actions.length: expected <= ${MAX_ACTIONS_PER_TICK}, got ${actions.length}`,
+    );
+  }
   const orderedActions = validateAndSortActions(actions);
   let state = cloneGameState(input);
 
   if (state.fsmState === 'GAME_OVER') {
     return orderedActions.includes(GameAction.Restart)
-      ? withFsm(state, 'BOOT')
+      ? buildBootState(state.seed)
       : freezeState(state);
   }
   if (orderedActions.includes(GameAction.Pause)) return freezeState(state);
@@ -150,6 +159,37 @@ export function step(
     lockResets,
   };
   return nextFsm === 'LOCKED' ? lockPiece(state) : freezeState(state);
+}
+
+/** Build a deterministic boot-equivalent state while preserving the seed. */
+export function buildBootState(seed: number): GameState {
+  assertValidU32Seed(seed);
+  const initial = initBagFromSeed(seed, 1);
+  return freezeState({
+    seed,
+    bag: { queue: initial.bag, index: 0 },
+    bagQueue: initial.bag.slice(),
+    level: 1,
+    totalLayersCleared: 0,
+    gravityAcc: 0,
+    softDropActive: false,
+    lockDelayTimer: 0,
+    lockResets: 0,
+    board: new Uint8Array(BOARD_CELL_COUNT),
+    piece: null,
+    fsmState: 'BOOT',
+    score: 0,
+    combo: -1,
+    b2bActive: false,
+    b2bCount: 0,
+    holdSlot: null,
+    holdUsedThisPiece: false,
+    lastActionWasRotation: false,
+    lastRotationUsedKick: false,
+    dasDirection: null,
+    dasCharge: 0,
+    dasRepeatCharge: 0,
+  });
 }
 
 function spawnPiece(state: GameState): GameState {
@@ -353,7 +393,9 @@ function validateAndSortActions(actions: readonly GameActionType[]): GameActionT
     seen.add(action);
     normalized.push(action);
   }
-  return normalized.sort((left, right) => actionPriority(left) - actionPriority(right));
+  return normalized.sort(
+    (left, right) => actionPriority(left) - actionPriority(right) || left - right,
+  );
 }
 
 function actionPriority(action: GameActionType): number {
@@ -367,7 +409,7 @@ function actionPriority(action: GameActionType): number {
 }
 
 function assertValidTick(tick: number): void {
-  if (!Number.isInteger(tick) || tick < 0) {
-    throw new RangeError(`tick must be non-negative integer, got ${tick}`);
+  if (!Number.isInteger(tick) || tick < 0 || tick > MAX_TICK) {
+    throw new RangeError(`tick: expected integer 0..${MAX_TICK}, got ${tick}`);
   }
 }

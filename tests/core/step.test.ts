@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_ACTIONS_PER_TICK,
   MAX_BAG_INDEX,
+  MAX_TICK,
   assertValidGameState,
   buildPiece,
   createBoard,
@@ -69,6 +71,23 @@ describe('step', () => {
     )).toThrow(TypeError);
   });
 
+  it('uses canonical sub-order for rotations regardless of input order', () => {
+    const piece = buildPiece(typeId(3));
+    piece.anchor.set([2, 2, 5]);
+    const input = baseState('FALLING', piece);
+    const reversed = step(
+      input,
+      [GameAction.RotateRollPos, GameAction.RotateYawPos],
+      1,
+    );
+    const canonicalOrder = step(
+      input,
+      [GameAction.RotateYawPos, GameAction.RotateRollPos],
+      1,
+    );
+    expect(canonical(reversed)).toBe(canonical(canonicalOrder));
+  });
+
   it('accepts a valid GameState and rejects malformed state boundaries', () => {
     const valid = baseState('FALLING', buildPiece(typeId(0)));
     expect(() => assertValidGameState(valid)).not.toThrow();
@@ -85,7 +104,7 @@ describe('step', () => {
       { ...valid, level: 0 },
       { ...valid, level: 21 },
       { ...valid, bag: { ...valid.bag, index: -1 } },
-      { ...valid, bag: { ...valid.bag, index: MAX_BAG_INDEX + 1 } },
+      { ...valid, bag: { ...valid.bag, index: MAX_BAG_INDEX + 2 } },
       { ...valid, seed: -1 },
       { ...valid, seed: 0x1_0000_0000 },
       { ...valid, score: -1 },
@@ -96,6 +115,19 @@ describe('step', () => {
       expect(() => assertValidGameState(state)).toThrow();
       expect(() => step(state, [], 0)).toThrow();
     }
+    expect(() => assertValidGameState({
+      ...valid,
+      bag: { ...valid.bag, index: MAX_BAG_INDEX + 1 },
+    })).not.toThrow();
+  });
+
+  it('rejects excessive action batches and replay ticks', () => {
+    expect(() => step(
+      baseState(),
+      Array.from({ length: MAX_ACTIONS_PER_TICK + 1 }, () => GameAction.MoveXPos),
+      0,
+    )).toThrow(RangeError);
+    expect(() => step(baseState(), [], MAX_TICK + 1)).toThrow(RangeError);
   });
 
   it('applies translation, rotation, pause/hold no-op, and restart priority', () => {
@@ -157,7 +189,27 @@ describe('step', () => {
     const over = step(input, [], 0);
     expect(over.fsmState).toBe('GAME_OVER');
     expect(step(over, [], 1).fsmState).toBe('GAME_OVER');
-    expect(step(over, [GameAction.Restart], 1).fsmState).toBe('BOOT');
+    const dirty = {
+      ...over,
+      score: 999,
+      level: 5,
+      totalLayersCleared: 20,
+      holdSlot: typeId(3),
+      holdUsedThisPiece: true,
+    };
+    const restarted = step(dirty, [GameAction.Restart], 1);
+    expect(restarted.fsmState).toBe('BOOT');
+    expect(restarted.board.every((cell) => cell === 0)).toBe(true);
+    expect(restarted.piece).toBeNull();
+    expect(restarted.score).toBe(0);
+    expect(restarted.totalLayersCleared).toBe(0);
+    expect(restarted.level).toBe(1);
+    expect(restarted.holdSlot).toBeNull();
+    expect(restarted.holdUsedThisPiece).toBe(false);
+    expect(restarted.seed).toBe(over.seed);
+    expect(restarted.bag.index).toBe(0);
+    expect(restarted.bag.queue).toHaveLength(7);
+    expect(restarted.bagQueue).toEqual(restarted.bag.queue);
   });
 
   it.each(['FALLING', 'GROUNDED'] as const)(

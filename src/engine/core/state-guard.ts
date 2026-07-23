@@ -24,7 +24,7 @@ export function assertValidGameState(state: GameState): asserts state is GameSta
   if (typeof state.bag !== 'object' || state.bag === null) {
     throw new TypeError('bag must be an object');
   }
-  assertIntegerInRange('bag.index', state.bag.index, 0, MAX_BAG_INDEX);
+  assertIntegerInRange('bag.index', state.bag.index, 0, MAX_BAG_INDEX + 1);
   assertIntegerInRange('seed', state.seed, 0, 0xffff_ffff);
   assertNonNegativeInteger('score', state.score);
   assertNonNegativeInteger('totalLayersCleared', state.totalLayersCleared);
