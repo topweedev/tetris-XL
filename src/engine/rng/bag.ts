@@ -1,25 +1,11 @@
 import { assertValidRngState, nextU32 } from '@engine/rng';
 import type { RngState } from '@engine/rng';
-import { typeId } from '@engine/types';
 import type { TypeId } from '@engine/types';
-import { LEVELS_PER_WEIGHT_BUCKET, TYPE_BUCKET_SIZES, WEIGHT_TABLE } from './bag-weights';
+import { BAG_WEIGHTS, MAX_LEVEL, POLYCUBE_BUCKETS } from './bag-weights';
 import type { BagWeights } from './bag-weights';
 
-export const BAG_SIZE = 12 as const;
-export const MIN_LEVEL = 0 as const;
-export const MAX_LEVEL_EXCLUSIVE = 20 as const;
-const U32_RANGE = 0x1_0000_0000;
-
-const TYPE_ID_BUCKETS: readonly (readonly TypeId[])[] = Object.freeze([
-  Object.freeze([typeId(0)]),
-  Object.freeze([typeId(1)]),
-  Object.freeze([typeId(2), typeId(3)]),
-  Object.freeze(Array.from({ length: 8 }, (_, index) => typeId(index + 4))),
-]);
-
-if (TYPE_ID_BUCKETS.some((bucket, index) => bucket.length !== TYPE_BUCKET_SIZES[index])) {
-  throw new Error('typeId bucket shape does not match ADR-0003 §2.4');
-}
+export const BAG_SIZE = 7 as const;
+export const MIN_LEVEL = 1 as const;
 
 export interface GenerateBagResult {
   readonly state: RngState;
@@ -28,36 +14,29 @@ export interface GenerateBagResult {
 
 export function weightsForLevel(level: number): BagWeights {
   assertValidLevel(level);
-  const weights = WEIGHT_TABLE[Math.floor(level / LEVELS_PER_WEIGHT_BUCKET)];
+  const weights = BAG_WEIGHTS[level - 1];
   if (weights === undefined) throw new Error(`missing weights for level ${level}`);
   return weights;
 }
 
+/** Generate seven pieces using one immutable level-weight snapshot. */
 export function generateBag(state: RngState, level: number): GenerateBagResult {
   assertValidRngState(state);
   const weights = weightsForLevel(level);
-  const remaining = TYPE_ID_BUCKETS.map((bucket) => [...bucket]);
   const bag: TypeId[] = [];
   let nextState = state;
 
-  while (bag.length < BAG_SIZE) {
-    const activeWeights = weights.map((weight, index) =>
-      (remaining[index]?.length ?? 0) > 0 ? weight : 0,
-    );
-    const bucketDraw = nextBounded(
-      nextState,
-      activeWeights.reduce((sum, weight) => sum + weight, 0),
-    );
+  for (let slot = 0; slot < BAG_SIZE; slot++) {
+    const bucketDraw = nextU32(nextState);
     nextState = bucketDraw.state;
-    const bucketIndex = selectWeightedIndex(activeWeights, bucketDraw.value);
-    const bucket = remaining[bucketIndex];
-    if (bucket === undefined || bucket.length === 0) {
-      throw new Error('weighted bag selected an empty typeId bucket');
-    }
-    const typeDraw = nextBounded(nextState, bucket.length);
+    const bucketIndex = selectWeightedBucket(weights, bucketDraw.value % 100);
+    const bucket = POLYCUBE_BUCKETS[bucketIndex];
+    if (bucket === undefined) throw new Error(`missing polycube bucket ${bucketIndex}`);
+
+    const typeDraw = nextU32(nextState);
     nextState = typeDraw.state;
-    const [selected] = bucket.splice(typeDraw.value, 1);
-    if (selected === undefined) throw new Error('weighted bag failed to select a typeId');
+    const selected = bucket[typeDraw.value % bucket.length];
+    if (selected === undefined) throw new Error(`failed to select from polycube bucket ${bucketIndex}`);
     bag.push(selected);
   }
 
@@ -65,27 +44,12 @@ export function generateBag(state: RngState, level: number): GenerateBagResult {
 }
 
 function assertValidLevel(level: number): void {
-  if (!Number.isInteger(level) || level < MIN_LEVEL || level >= MAX_LEVEL_EXCLUSIVE) {
-    throw new RangeError(`invalid level: expected integer in [0, 20), got ${String(level)}`);
+  if (!Number.isInteger(level) || level < MIN_LEVEL || level > MAX_LEVEL) {
+    throw new TypeError(`invalid level: expected integer in [1, 20], got ${String(level)}`);
   }
 }
 
-function nextBounded(state: RngState, maxExclusive: number): { state: RngState; value: number } {
-  if (!Number.isInteger(maxExclusive) || maxExclusive < 1) {
-    throw new RangeError(`invalid random bound: ${String(maxExclusive)}`);
-  }
-  const acceptanceLimit = U32_RANGE - (U32_RANGE % maxExclusive);
-  let nextState = state;
-  while (true) {
-    const draw = nextU32(nextState);
-    nextState = draw.state;
-    if (draw.value < acceptanceLimit) {
-      return { state: nextState, value: draw.value % maxExclusive };
-    }
-  }
-}
-
-function selectWeightedIndex(weights: readonly number[], draw: number): number {
+function selectWeightedBucket(weights: BagWeights, draw: number): number {
   let cumulative = 0;
   for (const [index, weight] of weights.entries()) {
     cumulative += weight;
