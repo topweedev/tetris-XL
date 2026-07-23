@@ -74,6 +74,7 @@ describe('step', () => {
     expect(() => assertValidGameState(valid)).not.toThrow();
 
     const malformed: readonly GameState[] = [
+      { ...valid, board: [] as never },
       { ...valid, board: new Uint8Array(299) },
       { ...valid, piece: { ...valid.piece!, cellCount: 5 } },
       { ...valid, piece: { ...valid.piece!, cells: new Int8Array(11) } },
@@ -81,9 +82,12 @@ describe('step', () => {
       { ...valid, piece: { ...valid.piece!, anchor: new Int8Array(2) } },
       { ...valid, piece: { ...valid.piece!, typeId: 12 as never } },
       { ...valid, piece: { ...valid.piece!, rotationStateId: 24 as never } },
+      { ...valid, level: 0 },
       { ...valid, level: 21 },
+      { ...valid, bag: { ...valid.bag, index: -1 } },
       { ...valid, bag: { ...valid.bag, index: MAX_BAG_INDEX + 1 } },
       { ...valid, seed: -1 },
+      { ...valid, seed: 0x1_0000_0000 },
       { ...valid, score: -1 },
       { ...valid, totalLayersCleared: -1 },
       { ...valid, fsmState: 'INVALID' as FsmState },
