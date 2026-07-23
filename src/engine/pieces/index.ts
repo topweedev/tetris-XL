@@ -5,3 +5,12 @@ export {
 export { POLYCUBE_DEFS, assertValidPolycubeDefs } from './definitions';
 export type { PolycubeDef, CellTuple } from './definitions';
 export { isFaceConnected } from './connectivity';
+export { SO24, applyRotation, determinant, matrixKey, multiplyMatrices } from './so24';
+export type { Mat3 } from './so24';
+export {
+  ROTATION_STATES, EXPECTED_ROTATION_STATE_COUNTS, enumerateFixedStates,
+  normalizeCells, canonicalCellKey, unpackCells, computeOrigin, packCells,
+} from './rotations';
+export type { RotationState } from './rotations';
+export { ROTATION_ACTIONS, ROTATION_AXIS_MATRICES, ROTATION_GRAPH } from './rotation-graph';
+export type { RotationAction, RotationTransitions } from './rotation-graph';
