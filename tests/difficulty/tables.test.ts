@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BASE_LINE_SCORE,
   GRAVITY_TABLE,
   LOCK_DELAY_TABLE_MS,
   assertValidDifficultyTables,
@@ -17,6 +18,11 @@ describe('difficulty tables', () => {
     ]);
     expect(Object.isFrozen(GRAVITY_TABLE)).toBe(true);
     expect(Object.isFrozen(LOCK_DELAY_TABLE_MS)).toBe(true);
+  });
+
+  it('exports BASE_LINE_SCORE from ADR-0003 §2.7', () => {
+    expect(BASE_LINE_SCORE).toEqual([0, 100, 300, 700, 1500]);
+    expect(Object.isFrozen(BASE_LINE_SCORE)).toBe(true);
   });
 
   it('is monotonically non-increasing and positive', () => {
@@ -44,5 +50,13 @@ describe('difficulty tables', () => {
     drifted[0] = 59;
     expect(() => assertValidDifficultyTables(drifted, LOCK_DELAY_TABLE_MS))
       .toThrow(/differs from ADR/);
+    expect(() => assertValidDifficultyTables(GRAVITY_TABLE, LOCK_DELAY_TABLE_MS, [0, 100]))
+      .toThrow(/length/);
+    expect(() => assertValidDifficultyTables(
+      GRAVITY_TABLE, LOCK_DELAY_TABLE_MS, [1, 100, 300, 700, 1500],
+    )).toThrow(/must be 0/);
+    expect(() => assertValidDifficultyTables(
+      GRAVITY_TABLE, LOCK_DELAY_TABLE_MS, [0, 100, 100, 700, 1500],
+    )).toThrow(/strictly increasing/);
   });
 });

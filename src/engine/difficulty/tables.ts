@@ -26,9 +26,25 @@ export const LOCK_DELAY_TABLE_MS: readonly number[] = Object.freeze([
 export function assertValidDifficultyTables(
   gravity: readonly number[] = GRAVITY_TABLE,
   lockDelayMs: readonly number[] = LOCK_DELAY_TABLE_MS,
+  baseLineScore: readonly number[] = BASE_LINE_SCORE,
 ): void {
   assertTable('GRAVITY_TABLE', gravity, EXPECTED_GRAVITY_TABLE);
   assertTable('LOCK_DELAY_TABLE_MS', lockDelayMs, EXPECTED_LOCK_DELAY_TABLE_MS);
+  assertValidBaseLineScore(baseLineScore);
+}
+
+function assertValidBaseLineScore(score: readonly number[]): void {
+  if (score.length !== 5) {
+    throw new Error(`BASE_LINE_SCORE.length must be 5, got ${score.length}`);
+  }
+  if (score[0] !== 0) {
+    throw new Error(`BASE_LINE_SCORE[0] must be 0, got ${score[0]}`);
+  }
+  for (let index = 1; index < score.length; index++) {
+    if (score[index]! <= score[index - 1]!) {
+      throw new Error(`BASE_LINE_SCORE must be strictly increasing at ${index}`);
+    }
+  }
 }
 
 function assertTable(
