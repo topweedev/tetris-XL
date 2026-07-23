@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertValidLevel,
   gravityStepAtLevel,
   levelFromLayers,
   lockDelayAtLevel,
@@ -14,6 +15,11 @@ describe('level helpers', () => {
 
   it.each([-1, 1.5, NaN, Infinity])('rejects invalid cleared layers %s', (layers) => {
     expect(() => levelFromLayers(layers)).toThrow(TypeError);
+  });
+
+  it('exports the level validator', () => {
+    expect(() => assertValidLevel(1)).not.toThrow();
+    expect(() => assertValidLevel(20)).not.toThrow();
   });
 
   it('looks up level boundary values', () => {

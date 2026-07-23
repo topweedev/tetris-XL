@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { resetLockDelay, tickLockDelay } from '@engine/core';
-import type { LockDelayState } from '@engine/core';
+import {
+  createLockDelayState,
+  resetLockDelay,
+  tickLockDelay,
+} from '@engine/core';
 
-const INITIAL: LockDelayState = { msElapsed: 0, resetsUsed: 0, locked: false };
+const INITIAL = createLockDelayState();
 
 describe('lock delay', () => {
+  it('creates a frozen zeroed state', () => {
+    expect(INITIAL).toEqual({ msElapsed: 0, resetsUsed: 0, locked: false });
+    expect(Object.isFrozen(INITIAL)).toBe(true);
+  });
+
   it('locks when elapsed time reaches the level threshold', () => {
     expect(tickLockDelay(INITIAL, 499, 1)).toEqual({
       msElapsed: 499, resetsUsed: 0, locked: false,
@@ -13,11 +21,12 @@ describe('lock delay', () => {
     expect(tickLockDelay(INITIAL, 250, 20).locked).toBe(true);
   });
 
-  it('accumulates fractional milliseconds', () => {
+  it('accumulates fractional milliseconds in frozen states', () => {
     const first = tickLockDelay(INITIAL, 16.67, 1);
     const second = tickLockDelay(first, 16.67, 1);
     expect(second.msElapsed).toBeCloseTo(33.34);
     expect(second.locked).toBe(false);
+    expect(Object.isFrozen(second)).toBe(true);
   });
 
   it('resets timer for the first 15 successful grounded actions', () => {
@@ -25,6 +34,7 @@ describe('lock delay', () => {
     for (let reset = 1; reset <= 15; reset++) {
       state = resetLockDelay(state);
       expect(state).toEqual({ msElapsed: 0, resetsUsed: reset, locked: false });
+      expect(Object.isFrozen(state)).toBe(true);
       state = tickLockDelay(state, 10, 1);
     }
   });
@@ -36,20 +46,20 @@ describe('lock delay', () => {
     expect(resetLockDelay(state)).toEqual({ msElapsed: 0, resetsUsed: 15, locked: true });
   });
 
-  it('keeps locked states locked and returns new objects', () => {
-    const locked = { ...INITIAL, locked: true };
-    expect(tickLockDelay(locked, 100, 1)).toEqual(locked);
-    expect(tickLockDelay(locked, 100, 1)).not.toBe(locked);
-    expect(resetLockDelay(locked)).toEqual(locked);
-    expect(resetLockDelay(locked)).not.toBe(locked);
+  it('returns an existing locked state unchanged', () => {
+    const locked = tickLockDelay(INITIAL, 500, 1);
+    expect(tickLockDelay(locked, -1, 0)).toBe(locked);
+    expect(resetLockDelay(locked)).toBe(locked);
   });
 
   it.each([-1, NaN, Infinity])('rejects invalid dtMs %s', (dtMs) => {
-    expect(() => tickLockDelay(INITIAL, dtMs, 1)).toThrow(TypeError);
+    expect(() => tickLockDelay(INITIAL, dtMs, 1)).toThrow(RangeError);
   });
 
-  it('rejects invalid lock-delay state and level', () => {
-    expect(() => tickLockDelay({ ...INITIAL, msElapsed: -1 }, 1, 1)).toThrow(TypeError);
+  it('rejects overflow, invalid state, and invalid level', () => {
+    expect(() => tickLockDelay({ ...INITIAL, msElapsed: Number.MAX_VALUE }, Number.MAX_VALUE, 1))
+      .toThrow(/overflow/);
+    expect(() => tickLockDelay({ ...INITIAL, msElapsed: -1 }, 1, 1)).toThrow(RangeError);
     expect(() => resetLockDelay({ ...INITIAL, resetsUsed: -1 })).toThrow(RangeError);
     expect(() => resetLockDelay({ ...INITIAL, resetsUsed: 16 })).toThrow(RangeError);
     expect(() => tickLockDelay(INITIAL, 1, 21)).toThrow(RangeError);

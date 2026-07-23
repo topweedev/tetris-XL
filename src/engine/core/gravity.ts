@@ -1,12 +1,10 @@
 import {
-  SOFT_DROP_GRAVITY_MULT,
   SOFT_DROP_MIN_GRAVITY_STEP,
   gravityStepAtLevel,
 } from '@engine/difficulty';
 
 export interface GravityState {
   readonly ticksAccumulated: number;
-  readonly softDropActive: boolean;
 }
 
 export interface GravityTickResult {
@@ -14,7 +12,11 @@ export interface GravityTickResult {
   readonly shouldFallRow: boolean;
 }
 
-/** Advance gravity by one simulation tick. */
+export function createGravityState(): GravityState {
+  return Object.freeze({ ticksAccumulated: 0 });
+}
+
+/** Advance one tick; soft drop uses an effective one-tick step. */
 export function tickGravity(
   state: GravityState,
   level: number,
@@ -24,16 +26,18 @@ export function tickGravity(
   if (typeof softDrop !== 'boolean') {
     throw new TypeError(`softDrop must be boolean, got ${typeof softDrop}`);
   }
-  const gravityStep = gravityStepAtLevel(level);
-  const increment = softDrop ? SOFT_DROP_GRAVITY_MULT : 1;
-  const accumulated = state.ticksAccumulated + increment;
-  const shouldFallRow = accumulated >= gravityStep;
+  const stepBase = gravityStepAtLevel(level);
+  const stepEffective = softDrop ? 1 : stepBase;
+  const nextTicks = state.ticksAccumulated + 1;
+  if (nextTicks >= stepEffective) {
+    return {
+      state: Object.freeze({ ticksAccumulated: 0 }),
+      shouldFallRow: true,
+    };
+  }
   return {
-    state: {
-      ticksAccumulated: shouldFallRow ? 0 : accumulated,
-      softDropActive: softDrop,
-    },
-    shouldFallRow,
+    state: Object.freeze({ ticksAccumulated: nextTicks }),
+    shouldFallRow: false,
   };
 }
 
@@ -47,8 +51,5 @@ function assertValidGravityState(state: GravityState): void {
     throw new TypeError(
       `ticksAccumulated must be non-negative integer, got ${state.ticksAccumulated}`,
     );
-  }
-  if (typeof state.softDropActive !== 'boolean') {
-    throw new TypeError('softDropActive must be boolean');
   }
 }
