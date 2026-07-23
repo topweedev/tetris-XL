@@ -40,6 +40,12 @@ describe('hasCollision', () => {
     expect(hasCollision(board, ORIGIN, [2, 2, z], I4)).toBe(false);
   });
 
+  it('accepts I4 local z=3 at the exact spawn-buffer ceiling', () => {
+    const topCell: readonly CellTuple[] = [[0, 0, 3]];
+    expect(hasCollision(createBoard(), topCell, [0, 0, 11], I4)).toBe(false);
+    expect(hasCollision(createBoard(), topCell, [0, 0, 12], I4)).toBe(true);
+  });
+
   it('rejects cells above the type-specific spawn buffer', () => {
     expect(hasCollision(createBoard(), ORIGIN, [2, 2, 15], I4)).toBe(true);
     expect(hasCollision(createBoard(), ORIGIN, [2, 2, 12], M1)).toBe(true);

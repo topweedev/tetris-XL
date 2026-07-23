@@ -38,6 +38,14 @@ describe('board primitives', () => {
     expect(getCellAt(board, 2, 2, 2)).toBe(0);
   });
 
+  it('accepts board values from zero through 126', () => {
+    const board = createBoard();
+    expect(() => setCellAt(board, 0, 0, 0, 0)).not.toThrow();
+    expect(() => setCellAt(board, 4, 4, 11, 126)).not.toThrow();
+    expect(getCellAt(board, 0, 0, 0)).toBe(0);
+    expect(getCellAt(board, 4, 4, 11)).toBe(126);
+  });
+
   it('clones into an independent buffer', () => {
     const board = createBoard();
     setCellAt(board, 1, 1, 1, 3);
