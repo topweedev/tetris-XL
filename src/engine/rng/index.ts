@@ -4,3 +4,4 @@ export { generateBag, weightsForLevel, BAG_SIZE, MIN_LEVEL } from './bag';
 export type { GenerateBagResult } from './bag';
 export { BAG_WEIGHTS, POLYCUBE_BUCKETS, MAX_LEVEL, BAG_BUCKET_COUNT, assertValidBagConfiguration } from './bag-weights';
 export type { BagWeights } from './bag-weights';
+export { initBagFromSeed, assertValidU32Seed } from './init';
