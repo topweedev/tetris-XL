@@ -60,7 +60,21 @@ describe('splitmix64', () => {
     [0xdead_beefn, 0x9e37_79ba_5df8_3b04n],
   ] as const)('draws deterministic counter from seed %s', (seed, expectedState) => {
     expect(nextU32(seed).state).toBe(expectedState);
-    expect(nextU32(seed)).toEqual(nextU32(seed));
+    let state: bigint = seed;
+    const firstRun: number[] = [];
+    for (let draw = 0; draw < 100; draw++) {
+      const result = nextU32(state);
+      firstRun.push(result.value);
+      state = result.state;
+    }
+    state = seed;
+    const secondRun: number[] = [];
+    for (let draw = 0; draw < 100; draw++) {
+      const result = nextU32(state);
+      secondRun.push(result.value);
+      state = result.state;
+    }
+    expect(secondRun).toEqual(firstRun);
   });
 
   it('normalizes out-of-range bigint inputs to u64', () => {
