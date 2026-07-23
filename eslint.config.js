@@ -23,6 +23,7 @@ export default [
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tsparser,
+      globals: { document: 'readonly', console: 'readonly', process: 'readonly' },
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
@@ -54,6 +55,10 @@ export default [
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports' },
+      ],
+      'no-restricted-imports': [
+        'error',
+        { patterns: ['@engine/../*', '@engine/../**', '@engine/*/../*', '@engine/*/../**', '@engine/**/../*', '@engine/**/../**'] },
       ],
     },
   },
@@ -91,6 +96,7 @@ export default [
     files: ['vite.config.ts', 'eslint.config.js', 'scripts/**/*.mjs'],
     languageOptions: {
       globals: {
+        document: 'readonly',
         process: 'readonly',
         console: 'readonly',
         __dirname: 'readonly',
@@ -99,6 +105,9 @@ export default [
     },
     rules: {
       'no-restricted-globals': 'off', // node scripts legitimately use process etc.
+      'no-eval': 'error',
+      'no-new-func': 'error',
+      'no-implied-eval': 'error',
     },
   },
 ];

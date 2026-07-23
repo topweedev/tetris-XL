@@ -1,31 +1,22 @@
 import { defineConfig } from 'vite';
-import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { computeAdrHash } from './src/build/adr-hash-plugin';
+const __dirname = resolve(fileURLToPath(new URL('.', import.meta.url)));
 
 // ─── ADR-0006 §2.3: adrHash injection ──────────────────────────────────
 // sha256 over the concatenated raw bytes of ADR-0001..0005 (docs-only ADRs
 // carrying runtime constants). ADR-0006 itself is excluded per §2.3.
 
-const ADR_FILES_FOR_HASH = [
-  'docs/adr/0001-project-architecture.md',
-  'docs/adr/0002-polycube-rotation-kicks.md',
-  'docs/adr/0003-difficulty-and-scoring.md',
-  'docs/adr/0004-input-ux-and-keymap.md',
-  'docs/adr/0005-hold-combo-spin-b2b-scoring.md',
-] as const;
-
-function computeAdrHash(): string {
-  const h = createHash('sha256');
-  for (const path of ADR_FILES_FOR_HASH) {
-    h.update(readFileSync(path));
-  }
-  return h.digest('hex').slice(0, 32); // 32 hex chars = 16 bytes; see ADR-0006 §2.3
-}
-
 function safeCommitSha(): string {
+  const envSha = process.env['GITHUB_SHA'] ?? process.env['COMMIT_SHA'];
+  if (envSha) return envSha.slice(0, 12);
   try {
-    return execSync('git rev-parse --short=12 HEAD', { encoding: 'utf8' }).trim();
+    return execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {
+      encoding: 'utf8',
+      env: { PATH: process.env['PATH'] },
+    }).trim();
   } catch {
     return 'unknown';
   }
@@ -41,6 +32,17 @@ const BUILD_TIME = new Date().toISOString();
 const COMMIT_SHA = safeCommitSha();
 
 export default defineConfig({
+  resolve: {
+    alias: [{
+      find: /^@engine\/(.+)$/,
+      replacement: (( _match: string, subpath: string) => {
+        if (subpath.split('/').some((segment) => segment === '..')) {
+          throw new Error(`@engine alias rejected traversal: ${subpath}`);
+        }
+        return resolve(__dirname, 'src/engine', subpath);
+      }) as unknown as string,
+    }],
+  },
   // Vanilla TS + three.js; no framework runtime (per ADR-0001 §2.1)
   root: '.',
   publicDir: 'public',
@@ -48,7 +50,8 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    sourcemap: true,
+    // project-specific env; SOURCE_MAP is too generic and risks CI runner leakage
+    sourcemap: process.env['BUILD_SOURCE_MAP'] === 'true',
     // No CDN / no split - single-origin bundle keeps CSP `connect-src 'none'` viable
     rollupOptions: {
       output: {

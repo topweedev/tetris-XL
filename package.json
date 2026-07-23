@@ -6,7 +6,7 @@
   "description": "5x5x12 3D fallout - vanilla TS + three.js game",
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.6.0 <23.0.0"
   },
   "scripts": {
     "dev": "vite",
@@ -20,7 +20,7 @@
     "security-check:eval": "node scripts/security-check-eval.mjs",
     "security-check:csp": "node scripts/security-check-csp.mjs",
     "security-check:env": "node scripts/security-check-env.mjs",
-    "security-check:adr-hash": "node scripts/security-check-adr-hash.mjs"
+    "security-check:adr-hash": "node --experimental-strip-types scripts/security-check-adr-hash.mjs"
   },
   "dependencies": {
     "three": "0.160.1",
@@ -35,6 +35,8 @@
     "eslint": "9.17.0",
     "typescript": "5.7.2",
     "vite": "6.0.6",
-    "vitest": "2.1.8"
+    "vitest": "2.1.8",
+    "@vitest/coverage-v8": "2.1.8",
+    "fake-indexeddb": "6.0.0"
   }
 }

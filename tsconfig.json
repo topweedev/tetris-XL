@@ -30,7 +30,6 @@
     "baseUrl": ".",
     "paths": {
       "@engine/*": ["src/engine/*"],
-      "@build/*": ["src/build/*"]
     },
 
     // Vite build-time env constants (see vite.config.ts define block)
@@ -40,8 +39,10 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "vite.config.ts",
+    "vitest.config.ts",
     "eslint.config.js",
-    "scripts/**/*.mjs"
+    "scripts/**/*.mjs",
+    "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "coverage"]
 }

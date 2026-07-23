@@ -46,6 +46,16 @@ if (!metaMatch) {
 // Normalize whitespace in the content string.
 const csp = metaMatch[3].replace(/\s+/g, ' ').trim();
 
+const scriptSrc = csp.match(/(?:^|\s)script-src\s+([^;]+)/)?.[1] ?? '';
+const ALLOWED_SCRIPT_SRC_TOKENS = new Set(["'self'", "'strict-dynamic'"]);
+for (const token of scriptSrc.split(/\s+/).filter(Boolean)) {
+  if (!ALLOWED_SCRIPT_SRC_TOKENS.has(token)) {
+    console.error(`[security-check-csp] FAIL — disallowed script-src token: ${token}`);
+    process.exit(1);
+  }
+}
+// TODO: remove style-src 'unsafe-inline' per ADR-0007 rev.3.
+
 let missing = 0;
 for (const directive of REQUIRED_DIRECTIVES) {
   if (!csp.includes(directive)) {
