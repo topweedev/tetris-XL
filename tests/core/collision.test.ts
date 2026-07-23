@@ -66,4 +66,19 @@ describe('hasCollision', () => {
     const valid: TypeId = M1;
     expect(valid).toBe(M1);
   });
+
+  it.each([
+    ['-1', -1],
+    ['12', 12],
+    ['1.5', 1.5],
+    ['NaN', NaN],
+    ['Infinity', Infinity],
+  ] as const)('throws RangeError for invalid typeId %s', (_label, value) => {
+    expect(() => hasCollision(
+      createBoard(),
+      ORIGIN,
+      [0, 0, 0],
+      value as unknown as TypeId,
+    )).toThrow(RangeError);
+  });
 });

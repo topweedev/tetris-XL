@@ -15,7 +15,17 @@ export function hasCollision(
   anchor: readonly [number, number, number],
   typeId: TypeId,
 ): boolean {
-  const bufferMax = BOARD_D - 1 + pieceMaxDz[Number(typeId)]!;
+  const typeIndex = Number(typeId);
+  if (
+    !Number.isInteger(typeIndex)
+    || typeIndex < 0
+    || typeIndex >= pieceMaxDz.length
+  ) {
+    throw new RangeError(
+      `invalid typeId: expected integer in [0, ${pieceMaxDz.length}), got ${typeIndex}`,
+    );
+  }
+  const bufferMax = BOARD_D - 1 + pieceMaxDz[typeIndex]!;
 
   for (const [cx, cy, cz] of cells) {
     const wx = anchor[0] + cx;
