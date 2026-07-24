@@ -7,6 +7,7 @@ export {
   BASE_LINE_SCORE,
   MAX_ACTIONS_PER_TICK,
   MAX_TICK,
+  actionPriority,
   buildBootState,
   buildPiece,
   step,
