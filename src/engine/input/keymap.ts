@@ -49,8 +49,9 @@ export function assertKeymapNoDualBinding(keymap: readonly KeyBinding[] = KEYMAP
 }
 
 export function assertHoldKeyReserved(keymap: readonly KeyBinding[] = KEYMAP): void {
-  if (keymap.some((entry) => entry.code === HOLD_KEY_CODE_RESERVED)) {
-    throw new Error(`${HOLD_KEY_CODE_RESERVED} is reserved for future Hold`);
+  for (const entry of keymap) {
+    if (entry.code === HOLD_KEY_CODE_RESERVED) throw new Error('KeyC is reserved for future Hold');
+    if (entry.action === GameAction.Hold) throw new Error('GameAction.Hold must only bind to KeyC');
   }
 }
 

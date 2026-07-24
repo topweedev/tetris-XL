@@ -47,6 +47,8 @@ describe('input keymap', () => {
       action: GameAction.Hold,
     }];
     expect(() => assertHoldKeyReserved(holdCollision)).toThrow(/reserved/);
+    const wrongHold = [...KEYMAP, { code: 'KeyH' as const, action: GameAction.Hold }];
+    expect(() => assertHoldKeyReserved(wrongHold)).toThrow(/only bind/);
     expect(actionForKey(HOLD_KEY_CODE_RESERVED)).toBeUndefined();
   });
 });

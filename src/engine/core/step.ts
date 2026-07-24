@@ -398,7 +398,7 @@ function validateAndSortActions(actions: readonly GameActionType[]): GameActionT
   );
 }
 
-function actionPriority(action: GameActionType): number {
+export function actionPriority(action: GameActionType): number {
   if (action === GameAction.Pause) return 0;
   if (action === GameAction.Restart) return 1;
   if (ROTATION_SET.has(action)) return 2;
