@@ -13,13 +13,16 @@ describe('input entry validation', () => {
   it('accepts valid state and event', () => {
     expect(() => assertValidInputState(createInputState())).not.toThrow();
     expect(() => assertValidKeyInputEvent({ type: 'keydown', code: 'KeyQ' })).not.toThrow();
+    expect(() => assertValidKeyInputEvent({ type: 'keyup', code: 'KeyQ' })).not.toThrow();
   });
 
   it.each([
+    ['state not object', null],
     ['heldKeys not array', { heldKeys: new Map() }],
     ['negative ticks', { heldKeys: [{ code: 'KeyQ', ticksHeld: -1 }] }],
     ['fractional ticks', { heldKeys: [{ code: 'KeyQ', ticksHeld: 1.5 }] }],
     ['empty code', { heldKeys: [{ code: '', ticksHeld: 0 }] }],
+    ['non-string code', { heldKeys: [{ code: 42, ticksHeld: 0 }] }],
     ['long code', { heldKeys: [{ code: 'A'.repeat(33), ticksHeld: 0 }] }],
     ['duplicate code', { heldKeys: [{ code: 'KeyQ', ticksHeld: 0 }, { code: 'KeyQ', ticksHeld: 1 }] }],
   ])('rejects malformed state: %s', (_label, state) => {
@@ -28,6 +31,7 @@ describe('input entry validation', () => {
 
   it.each([
     ['bad type', { type: 'click', code: 'KeyQ' }],
+    ['missing type', { code: 'KeyQ' }],
     ['empty code', { type: 'keydown', code: '' }],
     ['non-string code', { type: 'keydown', code: 42 }],
     ['long code', { type: 'keydown', code: 'A'.repeat(33) }],
@@ -45,6 +49,8 @@ describe('input entry validation', () => {
       code: 'KeyQ' as const,
     }));
     expect(() => sampleInput(state, 0, events)).toThrow(RangeError);
+    const boundaryEvents = events.slice(0, MAX_INPUT_EVENTS_PER_TICK);
+    expect(() => sampleInput(state, MAX_TICK_DELTA, boundaryEvents)).not.toThrow();
     expect(() => sampleInput(state, 0, [{ type: 'click', code: 'KeyQ' } as unknown as KeyInputEvent])).toThrow();
   });
 });
