@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris-XL 井道可視性方案比較</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: #111620;
+      --panel-2: #171d28;
+      --text: #f2f5fa;
+      --muted: #96a1b4;
+      --line: rgba(255,255,255,.1);
+      --cyan: #35dfca;
+      --orange: #ff9a4d;
+      --danger: #ff6478;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color-scheme: dark; }
+    body { margin: 0; min-width: 320px; color: var(--text); background: radial-gradient(circle at 50% -20%, #243044 0, #0d1118 36%, var(--bg) 72%); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { width: min(1480px, 100%); margin: 0 auto; padding: 34px clamp(16px, 3.5vw, 50px) 48px; }
+    header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 10px; color: var(--cyan); font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 0; font-size: clamp(30px, 4vw, 52px); line-height: 1; letter-spacing: -.045em; }
+    .intro { max-width: 760px; margin: 13px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .scene-key { display: grid; gap: 7px; min-width: 215px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 13px; background: rgba(15,19,27,.78); }
+    .key-row { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
+    .dot { width: 9px; height: 9px; border-radius: 3px; }
+    .dot-active { border: 1px solid #7ffff1; background: rgba(53,223,202,.55); box-shadow: 0 0 8px rgba(53,223,202,.3); }
+    .dot-locked { background: var(--orange); }
+    .dot-ghost { border: 1px dashed #e9f0fb; background: transparent; }
+    .dot-danger { height: 2px; border-radius: 0; background: var(--danger); }
+    .comparison { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+    .option { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(155deg, rgba(24,30,42,.98), rgba(10,14,20,.98)); box-shadow: 0 22px 60px rgba(0,0,0,.24); }
+    .option.recommended { border-color: rgba(53,223,202,.4); box-shadow: 0 0 0 1px rgba(53,223,202,.08), 0 22px 60px rgba(0,0,0,.28); }
+    .option-head { display: flex; justify-content: space-between; gap: 15px; padding: 16px 17px 10px; }
+    .option-id { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; color: #dce3ee; font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .recommended .option-id { color: var(--cyan); border-color: rgba(53,223,202,.45); background: rgba(53,223,202,.08); }
+    .option-copy { flex: 1; min-width: 0; }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.015em; }
+    .subtitle { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .badge { align-self: start; padding: 5px 8px; border-radius: 99px; color: var(--cyan); background: rgba(53,223,202,.1); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .stage { position: relative; height: 466px; margin: 0 9px; overflow: hidden; border: 1px solid rgba(255,255,255,.065); border-radius: 13px; background: radial-gradient(circle at 50% 46%, rgba(42,57,76,.52), rgba(6,9,13,.8) 68%); }
+    .stage::after { content: ""; position: absolute; inset: auto 0 0; height: 90px; pointer-events: none; background: linear-gradient(transparent, rgba(0,0,0,.16)); }
+    .well-svg { width: 100%; height: 100%; display: block; }
+    .labels { position: absolute; inset: 0; pointer-events: none; }
+    .label { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 6px; color: #cbd3df; background: rgba(8,11,16,.76); backdrop-filter: blur(4px); font: 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+    .label::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .label-active { top: 35%; right: 5%; color: #65f5e3; }
+    .label-locked { bottom: 8%; left: 5%; color: #ffab68; }
+    .label-ghost { top: 58%; left: 4%; color: #e5ebf4; }
+    .option-foot { padding: 14px 17px 17px; }
+    .scoreline { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .metric { padding: 9px 10px; border-radius: 9px; background: rgba(255,255,255,.04); }
+    .metric-label { color: var(--muted); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+    .metric-value { display: block; margin-top: 3px; font-size: 11px; font-weight: 750; }
+    .tradeoff { margin: 11px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .decision-bar { display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center; margin-top: 14px; padding: 14px 16px; border: 1px solid rgba(53,223,202,.25); border-radius: 14px; background: rgba(53,223,202,.055); }
+    .decision-kicker { color: var(--cyan); font-size: 9px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    .decision-copy { color: #c9d3df; font-size: 11px; line-height: 1.5; }
+    .decision-copy strong { color: var(--text); }
+    .decision-status { padding: 5px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 99px; color: var(--muted); font-size: 8px; white-space: nowrap; }
+    @media (max-width: 980px) {
+      header { grid-template-columns: 1fr; }
+      .scene-key { grid-template-columns: repeat(4, minmax(0, 1fr)); min-width: 0; }
+      .comparison { grid-template-columns: 1fr; }
+      .option { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr); }
+      .option-head { grid-column: 1; }
+      .stage { grid-row: 1 / span 2; grid-column: 2; margin: 9px; }
+      .option-foot { grid-column: 1; }
+    }
+    @media (max-width: 650px) {
+      main { padding: 24px 11px 34px; }
+      header { gap: 17px; }
+      .scene-key { grid-template-columns: repeat(2, 1fr); }
+      .comparison { gap: 10px; }
+      .option { display: block; border-radius: 15px; }
+      .stage { height: 430px; }
+      .decision-bar { grid-template-columns: 1fr; gap: 7px; }
+      .decision-status { justify-self: start; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Tetris-XL · Design brief · Visibility study</p>
+        <h1>看見井底，也看清正在落下的方塊</h1>
+        <p class="intro">同一個局面、同一個透視角度，只改變井壁的顯示方式。比較重點是：下落方塊是否突出、最底層 locked blocks 是否持續可讀，以及井道深度是否仍然成立。</p>
+      </div>
+      <div class="scene-key" aria-label="圖例">
+        <span class="key-row"><i class="dot dot-active"></i>Active · 半透明</span>
+        <span class="key-row"><i class="dot dot-locked"></i>Locked · 實心</span>
+        <span class="key-row"><i class="dot dot-ghost"></i>Ghost · 線框</span>
+        <span class="key-row"><i class="dot dot-danger"></i>警戒高度</span>
+      </div>
+    </header>
+
+    <section class="comparison" aria-label="井道可視性三方案">
+      <article class="option" data-mode="glass">
+        <div class="option-head">
+          <span class="option-id">A</span>
+          <div class="option-copy"><h2>完整透明井壁</h2><div class="subtitle">四面牆都保留，使用固定低透明度</div></div>
+        </div>
+        <div class="stage"><svg class="well-svg" viewBox="0 0 360 466" role="img" aria-label="方案 A 完整透明井壁"></svg><div class="labels"><span class="label label-active">ACTIVE</span><span class="label label-ghost">GHOST</span><span class="label label-locked">LOCKED</span></div></div>
+        <div class="option-foot"><div class="scoreline"><div class="metric"><span class="metric-label">井道完整感</span><span class="metric-value">高</span></div><div class="metric"><span class="metric-label">井底辨識</span><span class="metric-value">中</span></div></div><p class="tradeoff">最像完整玻璃容器，但前方牆面會與 active、ghost 和底部方塊疊色。</p></div>
+      </article>
+
+      <article class="option" data-mode="cutaway">
+        <div class="option-head">
+          <span class="option-id">B</span>
+          <div class="option-copy"><h2>前壁切開</h2><div class="subtitle">保留後壁與側壁，鏡頭前方完全開放</div></div>
+        </div>
+        <div class="stage"><svg class="well-svg" viewBox="0 0 360 466" role="img" aria-label="方案 B 前壁切開井道"></svg><div class="labels"><span class="label label-active">ACTIVE</span><span class="label label-ghost">GHOST</span><span class="label label-locked">LOCKED</span></div></div>
+        <div class="option-foot"><div class="scoreline"><div class="metric"><span class="metric-label">井道完整感</span><span class="metric-value">中</span></div><div class="metric"><span class="metric-label">井底辨識</span><span class="metric-value">最高</span></div></div><p class="tradeoff">資訊最清楚、幾乎沒有遮擋；代價是井道較像剖面模型，沉浸感稍弱。</p></div>
+      </article>
+
+      <article class="option recommended" data-mode="fade">
+        <div class="option-head">
+          <span class="option-id">C</span>
+          <div class="option-copy"><h2>近端深度淡化</h2><div class="subtitle">後壁保留，前壁靠近井底時逐漸消失</div></div>
+          <span class="badge">推薦</span>
+        </div>
+        <div class="stage"><svg class="well-svg" viewBox="0 0 360 466" role="img" aria-label="方案 C 近端深度淡化井道"></svg><div class="labels"><span class="label label-active">ACTIVE</span><span class="label label-ghost">GHOST</span><span class="label label-locked">LOCKED</span></div></div>
+        <div class="option-foot"><div class="scoreline"><div class="metric"><span class="metric-label">井道完整感</span><span class="metric-value">高</span></div><div class="metric"><span class="metric-label">井底辨識</span><span class="metric-value">高</span></div></div><p class="tradeoff">保留完整井口與透視輪廓，同時讓最容易遮擋的近端底部退到背景。</p></div>
+      </article>
+    </section>
+
+    <div class="decision-bar">
+      <span class="decision-kicker">Design recommendation</span>
+      <span class="decision-copy"><strong>先以 C 做 playtest，B 作高對比 fallback。</strong> A 的容器感最好，但複雜堆疊時疊色風險最高。</span>
+      <span class="decision-status">等待選擇 · Design brief</span>
+    </div>
+  </main>
+
+  <script>
+    const NS='http://www.w3.org/2000/svg';
+    const ACTIVE='#35dfca', LOCKED=['#ff9a4d','#ffcd5b','#b779ff','#4f9dff','#50d489'], DANGER='#ff6478';
+    const p=(x,y,z)=>[180+(x-y)*26,320+(x+y)*13-z*23];
+    const el=(name,attrs={})=>{const node=document.createElementNS(NS,name);Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,v));return node};
+    const poly=(points,attrs={})=>el('polygon',{points:points.map(v=>v.join(',')).join(' '),...attrs});
+    const line=(a,b,attrs={})=>el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],...attrs});
+    const path=(d,attrs={})=>el('path',{d,...attrs});
+
+    function defs(svg,id){
+      const d=el('defs');
+      const fade=el('linearGradient',{id:`fade-${id}`,x1:'0',y1:'0',x2:'0',y2:'1'});
+      fade.append(el('stop',{offset:'0%','stop-color':'#83a8c8','stop-opacity':'.18'}),el('stop',{offset:'58%','stop-color':'#83a8c8','stop-opacity':'.08'}),el('stop',{offset:'100%','stop-color':'#83a8c8','stop-opacity':'0'}));
+      const glow=el('filter',{id:`glow-${id}`,x:'-50%',y:'-50%',width:'200%',height:'200%'});
+      glow.append(el('feGaussianBlur',{stdDeviation:'3',result:'blur'}),el('feMerge'));
+      glow.lastChild.append(el('feMergeNode',{in:'blur'}),el('feMergeNode',{in:'SourceGraphic'}));
+      d.append(fade,glow);svg.append(d);
+    }
+
+    function cube(svg,x,y,z,color,kind='locked'){
+      const a=p(x,y,z+1),b=p(x+1,y,z+1),c=p(x+1,y+1,z+1),d=p(x,y+1,z+1),a0=p(x,y,z),b0=p(x+1,y,z),c0=p(x+1,y+1,z),d0=p(x,y+1,z);
+      if(kind==='ghost'){
+        const attrs={fill:'rgba(255,255,255,.025)',stroke:'rgba(235,242,251,.72)','stroke-width':'1','stroke-dasharray':'4 3'};
+        svg.append(poly([a,b,c,d],attrs),poly([b,c,c0,b0],attrs),poly([d,c,c0,d0],attrs));return;
+      }
+      const alpha=kind==='active'?'.52':'1';
+      const stroke=kind==='active'?'#8affef':'rgba(255,255,255,.3)';
+      svg.append(poly([d,c,c0,d0],{fill:color,'fill-opacity':kind==='active'?'.33':'.72',stroke,'stroke-width':kind==='active'?'1.35':'.7'}));
+      svg.append(poly([b,c,c0,b0],{fill:color,'fill-opacity':kind==='active'?'.4':'.84',stroke,'stroke-width':kind==='active'?'1.35':'.7'}));
+      svg.append(poly([a,b,c,d],{fill:color,'fill-opacity':alpha,stroke,'stroke-width':kind==='active'?'1.45':'.8'}));
+    }
+
+    function grid(svg){
+      const floor=[p(0,0,0),p(5,0,0),p(5,5,0),p(0,5,0)];
+      svg.append(poly(floor,{fill:'#0c141d',stroke:'rgba(134,174,205,.32)','stroke-width':'1'}));
+      for(let i=0;i<=5;i++){
+        svg.append(line(p(i,0,0),p(i,5,0),{stroke:'rgba(125,161,188,.16)','stroke-width':'.7'}));
+        svg.append(line(p(0,i,0),p(5,i,0),{stroke:'rgba(125,161,188,.16)','stroke-width':'.7'}));
+      }
+    }
+
+    function backWalls(svg){
+      svg.append(poly([p(0,0,0),p(5,0,0),p(5,0,12),p(0,0,12)],{fill:'#5a83a5','fill-opacity':'.035',stroke:'rgba(126,169,202,.16)','stroke-width':'1'}));
+      svg.append(poly([p(0,0,0),p(0,5,0),p(0,5,12),p(0,0,12)],{fill:'#5a83a5','fill-opacity':'.035',stroke:'rgba(126,169,202,.16)','stroke-width':'1'}));
+      for(let z=2;z<12;z+=2){
+        svg.append(line(p(0,0,z),p(5,0,z),{stroke:'rgba(126,169,202,.075)','stroke-width':'.6'}));
+        svg.append(line(p(0,0,z),p(0,5,z),{stroke:'rgba(126,169,202,.075)','stroke-width':'.6'}));
+      }
+    }
+
+    function danger(svg){
+      const ring=[p(0,0,10),p(5,0,10),p(5,5,10),p(0,5,10)];
+      svg.append(poly(ring,{fill:DANGER,'fill-opacity':'.025',stroke:DANGER,'stroke-opacity':'.62','stroke-width':'1.2','stroke-dasharray':'6 4'}));
+      const q=p(5,0,10);
+      svg.append(line(q,[327,q[1]-15],{stroke:DANGER,'stroke-opacity':'.6','stroke-width':'.8'}));
+      const label=el('text',{x:'329',y:String(q[1]-17),fill:DANGER,'font-size':'7','font-family':'ui-monospace, monospace','text-anchor':'end','letter-spacing':'.08em'});label.textContent='DANGER Z10';svg.append(label);
+    }
+
+    function pieces(svg){
+      const locked=[
+        [0,0,0,0],[1,0,0,0],[2,0,0,1],[3,0,0,1],[4,0,0,1],
+        [0,1,0,0],[1,1,0,2],[2,1,0,2],[4,1,0,1],
+        [0,2,0,3],[1,2,0,3],[3,2,0,4],[4,2,0,4],
+        [0,3,0,3],[2,3,0,2],[3,3,0,4],[4,3,0,1],
+        [0,4,0,0],[1,4,0,0],[2,4,0,2],[3,4,0,1],[4,4,0,1],
+        [1,1,1,2],[2,1,1,2],[4,2,1,4],[0,3,1,3],[3,3,1,4],[4,4,1,1],
+        [2,1,2,2],[0,3,2,3]
+      ].sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
+      locked.forEach(([x,y,z,c])=>cube(svg,x,y,z,LOCKED[c]));
+      [[1,2,3],[2,2,3],[2,3,3],[3,3,3]].forEach(v=>cube(svg,...v,'#ffffff','ghost'));
+      [[1,2,7],[2,2,7],[2,3,7],[3,3,7]].forEach(v=>cube(svg,...v,ACTIVE,'active'));
+    }
+
+    function frontWalls(svg,mode,id){
+      const xWall=[p(5,0,0),p(5,5,0),p(5,5,12),p(5,0,12)];
+      const yWall=[p(0,5,0),p(5,5,0),p(5,5,12),p(0,5,12)];
+      if(mode==='glass'){
+        svg.append(poly(xWall,{fill:'#7ba2bf','fill-opacity':'.105',stroke:'rgba(152,194,224,.38)','stroke-width':'1'}));
+        svg.append(poly(yWall,{fill:'#7ba2bf','fill-opacity':'.105',stroke:'rgba(152,194,224,.38)','stroke-width':'1'}));
+      } else if(mode==='cutaway'){
+        const attrs={fill:'none',stroke:'rgba(152,194,224,.32)','stroke-width':'1','stroke-dasharray':'3 4'};
+        svg.append(path(`M${p(5,0,12).join(' ')} L${p(5,5,12).join(' ')} L${p(0,5,12).join(' ')}`,attrs));
+        svg.append(line(p(5,5,0),p(5,5,12),{stroke:'rgba(152,194,224,.15)','stroke-width':'.8','stroke-dasharray':'3 4'}));
+      } else {
+        svg.append(poly(xWall,{fill:`url(#fade-${id})`,stroke:'rgba(152,194,224,.24)','stroke-width':'1'}));
+        svg.append(poly(yWall,{fill:`url(#fade-${id})`,stroke:'rgba(152,194,224,.24)','stroke-width':'1'}));
+        svg.append(line(p(5,5,4),p(5,5,12),{stroke:'rgba(178,213,236,.28)','stroke-width':'.8'}));
+      }
+    }
+
+    function rim(svg){
+      const top=[p(0,0,12),p(5,0,12),p(5,5,12),p(0,5,12)];
+      svg.append(poly(top,{fill:'none',stroke:'rgba(184,219,242,.52)','stroke-width':'1.2'}));
+      [p(0,0,0),p(5,0,0),p(0,5,0),p(5,5,0)].forEach((b,i)=>{
+        const t=[p(0,0,12),p(5,0,12),p(0,5,12),p(5,5,12)][i];
+        svg.append(line(b,t,{stroke:'rgba(143,184,214,.2)','stroke-width':'.7'}));
+      });
+    }
+
+    document.querySelectorAll('.option').forEach((card,index)=>{
+      const svg=card.querySelector('svg'),mode=card.dataset.mode,id=`v${index}`;
+      defs(svg,id);backWalls(svg);grid(svg);danger(svg);pieces(svg);frontWalls(svg,mode,id);rim(svg);
+    });
+  </script>
+</body>
+</html>
