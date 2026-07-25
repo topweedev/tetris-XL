@@ -128,7 +128,7 @@
         <div class="z-chip">ACTIVE Z10 · DROP 2 · L PIECE</div>
         <div class="funnel" id="funnel">
           <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
-          <i class="ring" style="--s:1.58"></i><i class="ring" style="--s:2.17"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.33"></i><i class="ring" style="--s:3.92"></i><i class="ring" style="--s:4.50"></i><i class="ring" style="--s:5.08"></i><i class="ring" style="--s:5.67"></i><i class="ring" style="--s:6.25"></i><i class="ring danger" style="--s:6.83"></i><i class="ring" style="--s:7.42"></i>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
           <i class="rim-top"></i>
           <div class="floor" id="floor"></div>
         </div>
@@ -159,7 +159,7 @@
 
       <div class="stage-foot">
         <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
-        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · 綠色 1px 線框</span></div>
+        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · scale 5.86x</span></div>
         <div class="cue"><span class="cue-label">Ghost</span><span class="cue-value">Z0 · 白色虛線投影</span></div>
         <div class="cue"><span class="cue-label">底層</span><span class="cue-value">Z=0 真實方塊填滿 · Z=1 兩個 piece</span></div>
       </div>
@@ -169,7 +169,9 @@
   </main>
 
   <script>
-    const s=z=>1+(z/12)*7;
+    // 非物理 scale：二次曲線，低層幾乎不動，高層大幅放大，井口仍 8x
+    // s(0)=1, s(1)≈1.05, s(10)≈5.86, s(12)=8
+    const s=z=>1+Math.pow(z/12,2)*7;
     // 投影：cell center 從 grid 中心 (40,40) 向外 scale + 垂直偏移（模擬透視堆疊）
     const cx=(x,z)=>40+((x+0.5)*16-40)*s(z);
     const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*6;
