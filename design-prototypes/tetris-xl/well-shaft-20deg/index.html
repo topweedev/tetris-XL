@@ -174,7 +174,7 @@
     const s=z=>1+Math.pow(z/12,2)*7;
     // 投影：cell center 從 grid 中心 (40,40) 向外 scale + 垂直偏移（模擬透視堆疊）
     const cx=(x,z)=>40+((x+0.5)*16-40)*s(z);
-    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*6;
+    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*4;
     const half=z=>8*s(z);
 
     // 計算方塊集合的外框 path（投影後座標）
