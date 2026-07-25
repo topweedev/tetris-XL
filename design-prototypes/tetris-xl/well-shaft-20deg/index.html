@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tetris-XL · -5° · Z=10 · L piece · 2px wireframe</title>
+  <title>Tetris-XL · -5° · Z=10 · L piece · 1px wireframe · 底層加倍</title>
   <style>
     :root{
       --bg:#07090d;
@@ -45,7 +45,7 @@
 
     .funnel{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%) perspective(2400px) rotateX(-5deg);transform-style:preserve-3d}
 
-    .floor{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border:2px solid var(--rim);background:#0a1018;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 0 24px rgba(0,0,0,.6);transform:scale(.5);transform-origin:center}
+    .floor{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border:2px solid var(--rim);background:#0a1018;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 0 24px rgba(0,0,0,.6);transform:scale(1);transform-origin:center}
     .floor .cell{position:relative;border-right:1px solid var(--grid-soft);border-bottom:1px solid var(--grid-soft)}
     .floor .cell:nth-child(5n){border-right:0}
     .floor .cell:nth-child(n+21){border-bottom:0}
@@ -68,8 +68,8 @@
     /* locked = 實心 */
     .blk.locked{border:1px solid rgba(255,255,255,.35);background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -4px 8px rgba(0,0,0,.35),0 0 6px rgba(0,0,0,.4)}
     .blk.locked::after{content:"";position:absolute;inset:2px;border-top:1px solid rgba(255,255,255,.25);border-left:1px solid rgba(255,255,255,.15)}
-    /* active = 線框 only 2px，無內框、無 glow */
-    .blk.active{border:2px solid var(--cyan);background:transparent}
+    /* active = 線框 only 1px，無內框、無 glow */
+    .blk.active{border:1px solid var(--cyan);background:transparent}
     /* ghost = 角落框 */
     .blk.ghost{border:1px dashed rgba(237,244,255,.5);background:transparent}
     .blk.ghost::before,.blk.ghost::after{content:"";position:absolute;width:5px;height:5px;border:1px solid rgba(237,244,255,.7)}
@@ -112,10 +112,10 @@
     <header>
       <div>
         <p class="eyebrow">Tetris-XL · Design brief · Z=10 · L piece · 2px wireframe</p>
-        <h1>-5° 非物理強透視 · Active Z10 · L 方塊 · 線框 2px</h1>
-        <p class="intro">底層已有數個 locked 實心方塊尚未消除，active 是 4-cell L 方塊，線框只有 2px（無內框、無 glow、透明 fill）。active 在 Z=10（警戒高度），觀察線框是否遮擋底層視線。</p>
+        <h1>-5° 非物理強透視 · Active Z10 · L 方塊 · 線框 1px · 底層加倍</h1>
+        <p class="intro">底層已有數個 locked 實心方塊尚未消除，active 是 4-cell L 方塊，線框只有 1px（無內框、無 glow、透明 fill）。底層尺寸加倍（scale 1x，原 0.5x），井口維持 8x，透視比例不變。active 在 Z=10（警戒高度）。</p>
       </div>
-      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 0.5x</span></div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 1x</span></div>
     </header>
 
     <section class="stage-wrap" aria-label="Z=10 L piece 2px wireframe">
@@ -135,7 +135,7 @@
         <div class="z-chip">ACTIVE Z10 · DROP 2 · L PIECE</div>
         <div class="funnel" id="funnel">
           <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
-          <i class="ring" style="--s:1.13"></i><i class="ring" style="--s:1.75"></i><i class="ring" style="--s:2.38"></i><i class="ring" style="--s:3.00"></i><i class="ring" style="--s:3.63"></i><i class="ring" style="--s:4.25"></i><i class="ring" style="--s:4.88"></i><i class="ring" style="--s:5.50"></i><i class="ring" style="--s:6.13"></i><i class="ring danger" style="--s:6.75"></i><i class="ring" style="--s:7.37"></i>
+          <i class="ring" style="--s:1.58"></i><i class="ring" style="--s:2.17"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.33"></i><i class="ring" style="--s:3.92"></i><i class="ring" style="--s:4.50"></i><i class="ring" style="--s:5.08"></i><i class="ring" style="--s:5.67"></i><i class="ring" style="--s:6.25"></i><i class="ring danger" style="--s:6.83"></i><i class="ring" style="--s:7.42"></i>
           <i class="rim-top"></i>
           <div class="floor" id="floor"></div>
         </div>
@@ -159,25 +159,25 @@
           <i class="marker" data-label="Z10" style="top:16.66%"></i>
         </div>
 
-        <span class="note note-active">線框 2px · ACTIVE · 透明 fill</span>
+        <span class="note note-active">線框 1px · ACTIVE · 透明 fill</span>
         <span class="note note-locked">實心 · LOCKED · 底層</span>
         <span class="note note-wire">L piece · 4 cell · 無內框無 glow</span>
       </div>
 
       <div class="stage-foot">
         <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
-        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · scale 6.75x</span></div>
-        <div class="cue"><span class="cue-label">線框</span><span class="cue-value">2px only · 透明</span></div>
-        <div class="cue"><span class="cue-label">底層</span><span class="cue-value">locked 實心 · 0.5x–1.75x</span></div>
+        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · scale 6.83x</span></div>
+        <div class="cue"><span class="cue-label">線框</span><span class="cue-value">1px only · 透明</span></div>
+        <div class="cue"><span class="cue-label">底層</span><span class="cue-value">locked 實心 · 1x–2.75x</span></div>
       </div>
     </section>
 
-    <div class="meta"><strong>這份要確認什麼</strong><span>Z=10 警戒高度，4-cell L 方塊線框只有 2px（無內框、無 glow、透明 fill），是否仍清晰可見、是否遮擋底層實心方塊。</span></div>
+    <div class="meta"><strong>這份要確認什麼</strong><span>Z=10 警戒高度，4-cell L 方塊線框只有 1px（無內框、無 glow、透明 fill），底層尺寸加倍（1x），是否仍清晰可見、是否遮擋底層實心方塊。</span></div>
   </main>
 
   <script>
     const lockedColors=['#ff984c','#ffcb57','#4c9dff','#b776ff','#50d287'];
-    const s=z=>0.5+(z/12)*7.5;
+    const s=z=>1+(z/12)*7;
     const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
 
     // Locked blocks at bottom
