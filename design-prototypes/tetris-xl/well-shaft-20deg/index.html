@@ -177,11 +177,12 @@
     const s=z=>1+(z/12)*7;
     const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
 
-    // Locked blocks — only one layer (Z=0), rearranged
+    // Locked blocks — two pieces, one layer (Z=0)
+    // 4-cell square (O) in bottom-left: (0,3),(0,4),(1,3),(1,4)
+    // 4-cell L rotated 90° in bottom-right: (3,4),(4,4),(4,3),(4,2)
     const locked=[
-      {x:0,y:4,z:0,c:0},{x:1,y:4,z:0,c:1},{x:2,y:4,z:0,c:2},
-      {x:3,y:4,z:0,c:3},{x:4,y:4,z:0,c:4},
-      {x:0,y:3,z:0,c:0},{x:4,y:3,z:0,c:4},
+      {x:0,y:3,z:0,c:2},{x:1,y:3,z:0,c:2},{x:0,y:4,z:0,c:2},{x:1,y:4,z:0,c:2},
+      {x:3,y:4,z:0,c:4},{x:4,y:4,z:0,c:4},{x:4,y:3,z:0,c:4},{x:4,y:2,z:0,c:4},
     ];
 
     // L piece (4 cells): horizontal L — (0,0),(1,0),(2,0),(2,1)
