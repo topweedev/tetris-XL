@@ -10,9 +10,9 @@ tags: [adr, architecture, tetris-xl, tech-stack, game-loop]
 
 # ADR-0001: Tetris-XL 專案架構決策
 
-- 狀態：Accepted（rev.6 · upstream delta；rev.4 為 final review round）
+- 狀態：Accepted（rev.7 · upstream delta；rev.4 為 final review round）
 - 日期：2026-07-22
-- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2；rev.5 — upstream delta 收斂 §2.6 per ADR-0004 rev.2 §5、ADR-0005 rev.2 §5；rev.6 — upstream delta 註記 §2.1 UI 疊層條件已於 ADR-0007 rev.3 觸發）
+- 修訂：2026-07-22（rev.2 — 依 LA5 round 1 review 補齊 B1–B3 與部分 S/N；rev.3 — 自我 review 清理 3 nit；rev.4 — 依 LA5 round 2 review 修 New-B1 + piggyback New-S1/S2/N1/N2；rev.5 — upstream delta 收斂 §2.6 per ADR-0004 rev.2 §5、ADR-0005 rev.2 §5；rev.6 — upstream delta 註記 §2.1 UI 疊層條件已於 ADR-0007 rev.3 觸發）；2026-07-25（rev.7 — sync amendment §2.5 alt-mode 表述擴張為 near-vertical top-down 家族，配合 ADR-0008 accepted）
 - 決策者：專案發起團隊
 - 相關文件：README.md
 
@@ -132,7 +132,7 @@ Spawn / lock 兩階段各一條件，實作時可收於同一「非法佔位判�
 - 當前活動方塊以獨立 `Group` 表示，便於旋轉動畫與陰影投影。
 - 「著陸預覽 (ghost piece)」以半透明 wireframe 顯示於落點位置。
 - 井壁採用半透明材質 + `EdgesGeometry` 描邊，兼顧深度感與可視性。
-- 相機預設為輕微傾斜的俯視角（約 20° pitch），可切換為純垂直俯視；不採自由軌道相機以避免玩家迷失方向。
+- 相機預設為輕微傾斜的俯視角（約 20° pitch），可切換為 **near-vertical top-down 家族（0° ± 小傾角，具體規範見 ADR-0008）**；不採自由軌道相機以避免玩家迷失方向。
 - **透明度 / 深度**：ghost、井壁、活動件三者同框時 three.js 深度排序容易產生噪訊。spike 階段策略：
   - 井壁：`transparent:true, depthWrite:false, renderOrder:0`
   - 已鎖定 InstancedMesh：`renderOrder:1`（不透明優先）
@@ -241,6 +241,18 @@ docs/
 
 
 ## 6. 修訂紀錄 (Revision History)
+
+### rev.7 — 2026-07-25（upstream delta from ADR-0008 accepted）
+
+配合 ADR-0008（Well-Shaft Renderer 視覺語言）accept，滿足 ADR-0008 LA4 round 1 finding S1 path (b) 之 sync-amend 約束：
+
+- **§2.5 相機模式表述**：既有描述「相機預設為輕微傾斜的俯視角（約 20° pitch），可切換為純垂直俯視」擴張為「可切換為 **near-vertical top-down 家族（0° ± 小傾角，具體規範見 ADR-0008）**」。
+  - 原「純垂直俯視」（0°）在 ADR-0008 mockup 落地時實際採 `-5°` tilt（near-vertical，非嚴格 0°），若不擴張 §2.5 alt-mode 語意，ADR-0008 會單方面擴張上游 ADR 意義。本 amendment 使 §2.5 alt-mode 正式涵蓋整個 near-vertical 家族。
+  - 具體 tilt 值、非物理縮放、depth ring 分布、a11y mandate 等視覺實作規範全部歸 ADR-0008，本 §2.5 僅記錄 alt-mode 家族範圍。
+
+**verdict**：本 rev 屬 downstream-triggered sync amendment；決策來源為已 REVIEW_OK by LA4/LA6/LA7、human accepted 之 ADR-0008 rev.4；不觸發新 review round。
+
+**status**：Accepted 維持不變（rev.4 仍為 final review round；rev.5、rev.6、rev.7 皆為 upstream/downstream delta 註記類）。
 
 ### rev.6 — 2026-07-22（upstream delta）
 
