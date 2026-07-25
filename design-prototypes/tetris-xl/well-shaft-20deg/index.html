@@ -193,10 +193,10 @@
       const edgeMap=new Map();
       for(const [x,y] of cells){
         const candidates=[
-          [x*16,y*16,(x+1)*16,y*16],         // top
-          [(x+1)*16,y*16,(x+1)*16,(y+1)*16], // right
-          [x*16,(y+1)*16,(x+1)*16,(y+1)*16], // bottom
-          [x*16,y*16,x*16,(y+1)*16]          // left
+          [x*16,y*16,(x+1)*16,y*16],           // top: left→right
+          [(x+1)*16,y*16,(x+1)*16,(y+1)*16],   // right: top→bottom
+          [(x+1)*16,(y+1)*16,x*16,(y+1)*16],   // bottom: right→left
+          [x*16,(y+1)*16,x*16,y*16]            // left: bottom→top
         ];
         for(const e of candidates){
           const key=e.join(',');
