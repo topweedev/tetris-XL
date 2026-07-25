@@ -47,8 +47,8 @@
 
     .stage{position:relative;height:680px;overflow:hidden;background:radial-gradient(circle at 45% 38%,rgba(41,57,75,.55),rgba(5,8,12,.92) 68%)}
 
-    /* 3D scene — -5° tilt, camera pulled further back, stronger foreshortening (井口放大、井底縮小) */
-    .scene{position:absolute;left:50%;top:50%;width:460px;height:460px;transform:translate(-58%,-50%) perspective(560px) rotateX(-5deg);transform-style:preserve-3d}
+    /* 3D scene — -5° tilt, camera outside the well (perspective > 井口 z), strong foreshortening */
+    .scene{position:absolute;left:50%;top:50%;width:400px;height:400px;transform:translate(-58%,-50%) perspective(540px) rotateX(-5deg);transform-style:preserve-3d}
     .well{position:absolute;inset:0;transform-style:preserve-3d}
 
     /* 井底 5x5 grid (Z=0 plane) */
@@ -60,10 +60,10 @@
 
     /* 井壁 — 4 面向上延伸到 Z=12 (每格 1 cube 高，共 12 層) */
     .wall{position:absolute;transform-style:preserve-3d}
-    .wall-back{left:0;top:0;width:100%;height:460px;transform-origin:top center;transform:rotateX(-90deg) translateY(-230px) translateZ(230px);background:linear-gradient(180deg,rgba(120,150,180,.04) 0%,rgba(120,150,180,.12) 100%);border:1px solid var(--wall-edge)}
-    .wall-front{left:0;bottom:0;width:100%;height:460px;transform-origin:bottom center;transform:rotateX(90deg) translateY(230px) translateZ(230px);background:linear-gradient(180deg,rgba(120,150,180,.12) 0%,rgba(120,150,180,.04) 100%);border:1px solid var(--wall-edge);opacity:.55}
-    .wall-left{left:0;top:0;width:460px;height:100%;transform-origin:left center;transform:rotateY(90deg) translateX(-230px) translateZ(230px);background:linear-gradient(90deg,rgba(120,150,180,.04) 0%,rgba(120,150,180,.1) 100%);border:1px solid var(--wall-edge)}
-    .wall-right{right:0;top:0;width:460px;height:100%;transform-origin:right center;transform:rotateY(-90deg) translateX(230px) translateZ(230px);background:linear-gradient(90deg,rgba(120,150,180,.1) 0%,rgba(120,150,180,.04) 100%);border:1px solid var(--wall-edge)}
+    .wall-back{left:0;top:0;width:100%;height:400px;transform-origin:top center;transform:rotateX(-90deg) translateY(-200px) translateZ(200px);background:linear-gradient(180deg,rgba(120,150,180,.04) 0%,rgba(120,150,180,.12) 100%);border:1px solid var(--wall-edge)}
+    .wall-front{left:0;bottom:0;width:100%;height:400px;transform-origin:bottom center;transform:rotateX(90deg) translateY(200px) translateZ(200px);background:linear-gradient(180deg,rgba(120,150,180,.12) 0%,rgba(120,150,180,.04) 100%);border:1px solid var(--wall-edge);opacity:.55}
+    .wall-left{left:0;top:0;width:400px;height:100%;transform-origin:left center;transform:rotateY(90deg) translateX(-200px) translateZ(200px);background:linear-gradient(90deg,rgba(120,150,180,.04) 0%,rgba(120,150,180,.1) 100%);border:1px solid var(--wall-edge)}
+    .wall-right{right:0;top:0;width:400px;height:100%;transform-origin:right center;transform:rotateY(-90deg) translateX(200px) translateZ(200px);background:linear-gradient(90deg,rgba(120,150,180,.1) 0%,rgba(120,150,180,.04) 100%);border:1px solid var(--wall-edge)}
 
     /* 每層高度環 — 12 層等距 ring，每層 = 1 cube 高 */
     .ring{position:absolute;left:0;top:0;width:100%;height:100%;border:1px solid var(--rim-soft);pointer-events:none;transform:translateZ(var(--z))}
@@ -101,8 +101,8 @@
     .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
     .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
 
-    @media(max-width:900px){header{grid-template-columns:1fr}.stage{height:600px}.scene{width:380px;height:380px;transform:translate(-58%,-50%) perspective(460px) rotateX(-5deg)}.wall-back,.wall-front{height:380px}.wall-left,.wall-right{width:380px}.wall-back{transform:rotateX(-90deg) translateY(-190px) translateZ(190px)}.wall-front{transform:rotateX(90deg) translateY(190px) translateZ(190px)}.wall-left{transform:rotateY(90deg) translateX(-190px) translateZ(190px)}.wall-right{transform:rotateY(-90deg) translateX(190px) translateZ(190px)}.axis{right:14px;top:50px;bottom:50px;width:60px}.stage-foot{grid-template-columns:repeat(2,1fr)}.note-danger{right:90px}}
-    @media(max-width:560px){main{padding:23px 10px 34px}.camera{min-width:0}.stage{height:520px}.scene{width:290px;height:290px;transform:translate(-62%,-50%) perspective(350px) rotateX(-5deg)}.wall-back,.wall-front{height:290px}.wall-left,.wall-right{width:290px}.wall-back{transform:rotateX(-90deg) translateY(-145px) translateZ(145px)}.wall-front{transform:rotateX(90deg) translateY(145px) translateZ(145px)}.wall-left{transform:rotateY(90deg) translateX(-145px) translateZ(145px)}.wall-right{transform:rotateY(-90deg) translateX(145px) translateZ(145px)}.axis{right:8px;top:46px;bottom:46px;width:50px}.tick span{font-size:6px}.note{font-size:7px;padding:5px 7px}.note-danger{right:70px;top:50px}.stage-foot{grid-template-columns:1fr 1fr}.cue-value{font-size:9px}}
+    @media(max-width:900px){header{grid-template-columns:1fr}.stage{height:600px}.scene{width:330px;height:330px;transform:translate(-58%,-50%) perspective(445px) rotateX(-5deg)}.wall-back,.wall-front{height:330px}.wall-left,.wall-right{width:330px}.wall-back{transform:rotateX(-90deg) translateY(-165px) translateZ(165px)}.wall-front{transform:rotateX(90deg) translateY(165px) translateZ(165px)}.wall-left{transform:rotateY(90deg) translateX(-165px) translateZ(165px)}.wall-right{transform:rotateY(-90deg) translateX(165px) translateZ(165px)}.axis{right:14px;top:50px;bottom:50px;width:60px}.stage-foot{grid-template-columns:repeat(2,1fr)}.note-danger{right:90px}}
+    @media(max-width:560px){main{padding:23px 10px 34px}.camera{min-width:0}.stage{height:520px}.scene{width:250px;height:250px;transform:translate(-62%,-50%) perspective(338px) rotateX(-5deg)}.wall-back,.wall-front{height:250px}.wall-left,.wall-right{width:250px}.wall-back{transform:rotateX(-90deg) translateY(-125px) translateZ(125px)}.wall-front{transform:rotateX(90deg) translateY(125px) translateZ(125px)}.wall-left{transform:rotateY(90deg) translateX(-125px) translateZ(125px)}.wall-right{transform:rotateY(-90deg) translateX(125px) translateZ(125px)}.axis{right:8px;top:46px;bottom:46px;width:50px}.tick span{font-size:6px}.note{font-size:7px;padding:5px 7px}.note-danger{right:70px;top:50px}.stage-foot{grid-template-columns:1fr 1fr}.cue-value{font-size:9px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
   </style>
 </head>
@@ -112,9 +112,9 @@
       <div>
         <p class="eyebrow">Tetris-XL · Design brief · 空井道視角確認</p>
         <h1>-5° 近俯視 · 無方塊 · 只看井道</h1>
-        <p class="intro">這份 mockup 故意拿掉所有方塊，只保留 5×5 井底、四面井壁與 12 層高度環（每 1 cube 一環），讓你單獨判斷 -5° 鏡頭再拉遠後井道本身的可讀性。井口放大、井底縮小更明顯，越靠近 viewer 的環視覺層高越高（透視壓縮）。右側 Z depth rail 仍保留 13 等距刻度（每格 = 1 cube 高）。</p>
+        <p class="intro">這份 mockup 故意拿掉所有方塊，只保留 5×5 井底、四面井壁與 12 層高度環（每 1 cube 一環），讓你單獨判斷 -5° 鏡頭在井道外時井道本身的可讀性。井口放大、井底縮小更明顯，越靠近 viewer 的環視覺層高越高（透視壓縮）。右側 Z depth rail 仍保留 13 等距刻度（每格 = 1 cube 高）。</p>
       </div>
-      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">鏡頭再拉遠 · 井口放大、井底縮小</span></div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">鏡頭在井道外 · 井口放大、井底縮小</span></div>
     </header>
 
     <section class="stage-wrap" aria-label="20° 近俯視空井道">
@@ -141,19 +141,19 @@
             <i class="wall wall-left"></i>
             <i class="wall wall-right"></i>
             <!-- 12 層高度環 (每 1 cube 一環，越靠近 viewer 視覺層高越高) -->
-            <i class="ring" style="--z:38px"></i>
-            <i class="ring" style="--z:76px"></i>
-            <i class="ring" style="--z:114px"></i>
-            <i class="ring" style="--z:152px"></i>
-            <i class="ring" style="--z:190px"></i>
-            <i class="ring" style="--z:228px"></i>
-            <i class="ring" style="--z:266px"></i>
-            <i class="ring" style="--z:304px"></i>
-            <i class="ring" style="--z:342px"></i>
-            <i class="ring danger" style="--z:380px"></i>
-            <i class="ring" style="--z:418px"></i>
+            <i class="ring" style="--z:33px"></i>
+            <i class="ring" style="--z:66px"></i>
+            <i class="ring" style="--z:99px"></i>
+            <i class="ring" style="--z:132px"></i>
+            <i class="ring" style="--z:165px"></i>
+            <i class="ring" style="--z:198px"></i>
+            <i class="ring" style="--z:231px"></i>
+            <i class="ring" style="--z:264px"></i>
+            <i class="ring" style="--z:297px"></i>
+            <i class="ring danger" style="--z:330px"></i>
+            <i class="ring" style="--z:363px"></i>
             <!-- 井口框 -->
-            <i class="rim-top" style="--z-top:456px"></i>
+            <i class="rim-top" style="--z-top:396px"></i>
           </div>
         </div>
 
@@ -190,7 +190,7 @@
       </div>
     </section>
 
-    <div class="meta"><strong>這份要確認什麼</strong><span>-5° 鏡頭再拉遠下，井口放大、井底縮小的縱深感是否足夠；12 層高度環（每 1 cube）密度與透視壓縮是否適當；越靠近 viewer 的環視覺層高是否越高。確認後再加上 active / locked / ghost 重做一份完整版。</span></div>
+    <div class="meta"><strong>這份要確認什麼</strong><span>-5° 鏡頭在井道外（perspective > 井口 z），井口放大、井底縮小的縱深感是否足夠；12 層高度環（每 1 cube）密度與透視壓縮是否適當；越靠近 viewer 的環視覺層高是否越高。確認後再加上 active / locked / ghost 重做一份完整版。</span></div>
   </main>
 
   <script>
