@@ -165,7 +165,7 @@
         <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
         <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · 綠色 1px 線框</span></div>
         <div class="cue"><span class="cue-label">Ghost</span><span class="cue-value">Z0 · 白色虛線投影</span></div>
-        <div class="cue"><span class="cue-label">底層</span><span class="cue-value">locked 實心 · 1x–2.75x</span></div>
+        <div class="cue"><span class="cue-label">底層</span><span class="cue-value">locked 實心 · 1 層 · Z=0</span></div>
       </div>
     </section>
 
@@ -177,16 +177,11 @@
     const s=z=>1+(z/12)*7;
     const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
 
-    // Locked blocks at bottom
+    // Locked blocks — only one layer (Z=0), rearranged
     const locked=[
-      // Z=0
-      {x:0,y:4,z:0,c:0},{x:1,y:4,z:0,c:1},{x:2,y:4,z:0,c:2},{x:3,y:4,z:0,c:3},{x:4,y:4,z:0,c:4},
+      {x:0,y:4,z:0,c:0},{x:1,y:4,z:0,c:1},{x:2,y:4,z:0,c:2},
+      {x:3,y:4,z:0,c:3},{x:4,y:4,z:0,c:4},
       {x:0,y:3,z:0,c:0},{x:4,y:3,z:0,c:4},
-      {x:2,y:2,z:0,c:2},
-      // Z=1
-      {x:1,y:3,z:1,c:1},{x:3,y:3,z:1,c:3},
-      // Z=2
-      {x:2,y:3,z:2,c:2},
     ];
 
     // L piece (4 cells): (0,0),(0,1),(0,2),(1,2) — L shape
@@ -195,23 +190,33 @@
     // 計算方塊集合的外框 path（在 80x80 grid space）
     function outlinePath(cells){
       const set=new Set(cells.map(([x,y])=>`${x},${y}`));
-      const edges=[];
+      const edgeMap=new Map();
       for(const [x,y] of cells){
-        if(!set.has(`${x},${y-1}`)) edges.push([x*16,y*16,(x+1)*16,y*16]);
-        if(!set.has(`${x+1},${y}`)) edges.push([(x+1)*16,y*16,(x+1)*16,(y+1)*16]);
-        if(!set.has(`${x},${y+1}`)) edges.push([x*16,(y+1)*16,(x+1)*16,(y+1)*16]);
-        if(!set.has(`${x-1},${y}`)) edges.push([x*16,y*16,x*16,(y+1)*16]);
+        const candidates=[
+          [x*16,y*16,(x+1)*16,y*16],         // top
+          [(x+1)*16,y*16,(x+1)*16,(y+1)*16], // right
+          [x*16,(y+1)*16,(x+1)*16,(y+1)*16], // bottom
+          [x*16,y*16,x*16,(y+1)*16]          // left
+        ];
+        for(const e of candidates){
+          const key=e.join(',');
+          const rev=[e[2],e[3],e[0],e[1]].join(',');
+          if(edgeMap.has(rev)){edgeMap.delete(rev);}
+          else{edgeMap.set(key,e);}
+        }
       }
-      // 排序 edges 成連續 path
+      const edges=[...edgeMap.values()];
       const sorted=[edges.shift()];
       while(edges.length){
         const last=sorted[sorted.length-1];
-        const idx=edges.findIndex(e=>e[0]===last[2]&&e[1]===last[3]);
-        if(idx>=0){sorted.push(edges.splice(idx,1)[0]);}
-        else {break;}
+        const idx=edges.findIndex(e=>(e[0]===last[2]&&e[1]===last[3])||(e[2]===last[2]&&e[3]===last[3]));
+        if(idx<0)break;
+        let e=edges.splice(idx,1)[0];
+        if(e[2]===last[2]&&e[3]===last[3])e=[e[2],e[3],e[0],e[1]];
+        sorted.push(e);
       }
       let d=`M${sorted[0][0]},${sorted[0][1]}`;
-      for(const e of sorted) d+=` L${e[2]},${e[3]}`;
+      for(const e of sorted)d+=` L${e[2]},${e[3]}`;
       return d+' Z';
     }
 
