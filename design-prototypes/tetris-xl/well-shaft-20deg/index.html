@@ -47,8 +47,8 @@
 
     .stage{position:relative;height:680px;overflow:hidden;background:radial-gradient(circle at 45% 38%,rgba(41,57,75,.55),rgba(5,8,12,.92) 68%)}
 
-    /* 3D scene — 20° tilt */
-    .scene{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-58%,-50%) perspective(1400px) rotateX(20deg);transform-style:preserve-3d}
+    /* 3D scene — -20° tilt, stronger perspective (井口放大、井底縮小) */
+    .scene{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-58%,-50%) perspective(820px) rotateX(-20deg);transform-style:preserve-3d}
     .well{position:absolute;inset:0;transform-style:preserve-3d}
 
     /* 井底 5x5 grid (Z=0 plane) */
@@ -101,8 +101,8 @@
     .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
     .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
 
-    @media(max-width:900px){header{grid-template-columns:1fr}.stage{height:600px}.scene{width:420px;height:420px}.wall-back,.wall-front{height:420px}.wall-left,.wall-right{width:420px}.wall-back{transform:rotateX(-90deg) translateY(-210px) translateZ(210px)}.wall-front{transform:rotateX(90deg) translateY(210px) translateZ(210px)}.wall-left{transform:rotateY(90deg) translateX(-210px) translateZ(210px)}.wall-right{transform:rotateY(-90deg) translateX(210px) translateZ(210px)}.axis{right:14px;top:50px;bottom:50px;width:60px}.stage-foot{grid-template-columns:repeat(2,1fr)}.note-danger{right:90px}}
-    @media(max-width:560px){main{padding:23px 10px 34px}.camera{min-width:0}.stage{height:520px}.scene{width:320px;height:320px;transform:translate(-62%,-50%) perspective(1100px) rotateX(20deg)}.wall-back,.wall-front{height:320px}.wall-left,.wall-right{width:320px}.wall-back{transform:rotateX(-90deg) translateY(-160px) translateZ(160px)}.wall-front{transform:rotateX(90deg) translateY(160px) translateZ(160px)}.wall-left{transform:rotateY(90deg) translateX(-160px) translateZ(160px)}.wall-right{transform:rotateY(-90deg) translateX(160px) translateZ(160px)}.axis{right:8px;top:46px;bottom:46px;width:50px}.tick span{font-size:6px}.note{font-size:7px;padding:5px 7px}.note-danger{right:70px;top:50px}.stage-foot{grid-template-columns:1fr 1fr}.cue-value{font-size:9px}}
+    @media(max-width:900px){header{grid-template-columns:1fr}.stage{height:600px}.scene{width:420px;height:420px;transform:translate(-58%,-50%) perspective(660px) rotateX(-20deg)}.wall-back,.wall-front{height:420px}.wall-left,.wall-right{width:420px}.wall-back{transform:rotateX(-90deg) translateY(-210px) translateZ(210px)}.wall-front{transform:rotateX(90deg) translateY(210px) translateZ(210px)}.wall-left{transform:rotateY(90deg) translateX(-210px) translateZ(210px)}.wall-right{transform:rotateY(-90deg) translateX(210px) translateZ(210px)}.axis{right:14px;top:50px;bottom:50px;width:60px}.stage-foot{grid-template-columns:repeat(2,1fr)}.note-danger{right:90px}}
+    @media(max-width:560px){main{padding:23px 10px 34px}.camera{min-width:0}.stage{height:520px}.scene{width:320px;height:320px;transform:translate(-62%,-50%) perspective(500px) rotateX(-20deg)}.wall-back,.wall-front{height:320px}.wall-left,.wall-right{width:320px}.wall-back{transform:rotateX(-90deg) translateY(-160px) translateZ(160px)}.wall-front{transform:rotateX(90deg) translateY(160px) translateZ(160px)}.wall-left{transform:rotateY(90deg) translateX(-160px) translateZ(160px)}.wall-right{transform:rotateY(-90deg) translateX(160px) translateZ(160px)}.axis{right:8px;top:46px;bottom:46px;width:50px}.tick span{font-size:6px}.note{font-size:7px;padding:5px 7px}.note-danger{right:70px;top:50px}.stage-foot{grid-template-columns:1fr 1fr}.cue-value{font-size:9px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
   </style>
 </head>
@@ -111,10 +111,10 @@
     <header>
       <div>
         <p class="eyebrow">Tetris-XL · Design brief · 空井道視角確認</p>
-        <h1>20° 近俯視 · 無方塊 · 只看井道</h1>
-        <p class="intro">這份 mockup 故意拿掉所有方塊，只保留 5×5 井底、四面井壁與 12 層等距高度環，讓你單獨判斷 20° 俯視下井道本身的可讀性。右側 Z depth rail 刻度等距，每格 = 1 cube 高，與方塊尺寸成比例。</p>
+        <h1>-20° 近俯視 · 無方塊 · 只看井道</h1>
+        <p class="intro">這份 mockup 故意拿掉所有方塊，只保留 5×5 井底、四面井壁與 6 層高度環（每 2 cube 一環），讓你單獨判斷 -20° 強透視下井道本身的可讀性。井口放大、井底縮小，高度環隨透視壓縮。右側 Z depth rail 仍保留 13 等距刻度（每格 = 1 cube 高）。</p>
       </div>
-      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · 20° tilt</span><span class="camera-sub">保留明顯深度感，仍以 X/Y 為主視角</span></div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -20° tilt</span><span class="camera-sub">井口放大、井底縮小 · 強透視</span></div>
     </header>
 
     <section class="stage-wrap" aria-label="20° 近俯視空井道">
@@ -140,18 +140,12 @@
             <i class="wall wall-front"></i>
             <i class="wall wall-left"></i>
             <i class="wall wall-right"></i>
-            <!-- 12 層等距高度環 (每層 1 cube) -->
-            <i class="ring" style="--z:43px"></i>
+            <!-- 6 層高度環 (每 2 cube 一環，隨透視壓縮) -->
             <i class="ring" style="--z:86px"></i>
-            <i class="ring" style="--z:129px"></i>
             <i class="ring" style="--z:172px"></i>
-            <i class="ring" style="--z:215px"></i>
             <i class="ring" style="--z:258px"></i>
-            <i class="ring" style="--z:301px"></i>
             <i class="ring" style="--z:344px"></i>
-            <i class="ring danger" style="--z:387px"></i>
-            <i class="ring" style="--z:430px"></i>
-            <i class="ring" style="--z:473px"></i>
+            <i class="ring danger" style="--z:430px"></i>
             <!-- 井口框 -->
             <i class="rim-top" style="--z-top:516px"></i>
           </div>
@@ -179,18 +173,18 @@
         <span class="note note-rim">井口 · Z=12 · 5×5 開口</span>
         <span class="note note-floor">井底 · Z=0 · 5×5 grid</span>
         <span class="note note-danger">警戒高度 Z=10 · 虛線環</span>
-        <span class="note note-cube">每層 = 1 cube 高 · ring 等距</span>
+        <span class="note note-cube">6 環 · 每 2 cube · 隨透視壓縮</span>
       </div>
 
       <div class="stage-foot">
-        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ 20° tilt</span></div>
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -20° tilt</span></div>
         <div class="cue"><span class="cue-label">井道尺寸</span><span class="cue-value">5 × 5 × 12 cube</span></div>
+        <div class="cue"><span class="cue-label">高度環</span><span class="cue-value">6 環 · 每 2 cube · 隨透視壓縮</span></div>
         <div class="cue"><span class="cue-label">Z rail 刻度</span><span class="cue-value">13 等距 · 與 cube 等比例</span></div>
-        <div class="cue"><span class="cue-label">內容物</span><span class="cue-value">無（僅井道）</span></div>
       </div>
     </section>
 
-    <div class="meta"><strong>這份要確認什麼</strong><span>20° 俯視下，井道本身的縱深感、井口與井底辨識、12 層等距高度環是否夠清晰、Z depth rail 比例是否正確。確認後再加上 active / locked / ghost 重做一份完整版。</span></div>
+    <div class="meta"><strong>這份要確認什麼</strong><span>-20° 強透視下，井口放大、井底縮小的縱深感是否足夠；6 層高度環（每 2 cube）密度是否適當；Z depth rail 比例與位置。確認後再加上 active / locked / ghost 重做一份完整版。</span></div>
   </main>
 
   <script>
