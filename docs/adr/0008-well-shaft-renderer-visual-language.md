@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, renderer, visual, three-js, well-shaft, mockup, a11y]
 
 # ADR-0008: Well-Shaft Renderer 視覺語言（Layer 1 全域規則 + Layer 2 Piece 視覺）
 
-- 狀態：Proposed（rev.3 — 依 LA6 round 1 修 1 S-B + 4 S + 1 N；依 LA7 round 1 修 2 B + 5 S + 1 N；rev.2 為 LA4 round-1 收斂）
+- 狀態：Proposed（rev.3.1 — 依 LA6 round 2 nit + LA7 round 2 4 nits 收斂；rev.3 依 LA6 round 1 修 1 S-B + 5 S + 1 N、LA7 round 1 修 2 B + 5 S + 1 N；rev.2 為 LA4 round-1 收斂）
 - 日期：2026-07-25
 - 決策者：LA1 起草，待人類 + review agents (LA6 round 2 / LA7 round 2) 確認
 - 相關文件：
@@ -93,7 +93,7 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - **總繪製線數 = 11 rings + rim-top + floor 描邊 = 13 個線元素**。
 - **警戒高度 `Z=10`**：以**紅色 + 非顏色 cue 複合訊號** 標示：
   - **顏色**：紅色 ring。
-  - **非顏色 cue**：**dashed pattern**（相對於其他 depth ring 的實線）+ **持續脈衝亮度**（可選，需支援 `prefers-reduced-motion: reduce` 關閉）+ **DOM overlay 警戒 badge**（見 §5 a11y 對接 ADR-0007）。三者中至少 dashed pattern 為必備，其他為建議。
+  - **非顏色 cue**：**dashed pattern**（相對於其他 depth ring 的實線）+ **持續脈衝亮度**（可選；**頻率上限 ≤ 3 Hz 且採 smooth ramp**（WCAG 2.3.1 Three Flashes or Below Threshold），需支援 `prefers-reduced-motion: reduce` 完全關閉）+ **DOM overlay 警戒 badge**（見 §5 a11y 對接 ADR-0007）。三者中至少 dashed pattern 為必備，其他為建議。
   - **對比度**：紅色與井道背景的 WCAG 1.4.11 對比 **≥ 3:1**（mockup 的 `rgba(255,102,125,.45)` 疊暗背景後為 ~2.18:1，**不合格**，實作需調高 opacity 或改色使實際對比 ≥ 3:1）。
   - **軟警戒性質** — 非 game over 觸發線；game over 觸發條件見 ADR-0001 §2.4.3（spawn blocked 或 `z > 11` above-ceiling lock）。
 - **RenderOrder（Layer 1 全 ring 一致）**：`renderOrder = 0`（與井壁同層）；ring **不得** 遮擋 `renderOrder ≥ 1` 的 locked cell。實作端須確保 depth-write / z-fighting 不產生 ring 剪切 locked 的情況（若必要，關閉 ring 的 `depthWrite`）。
@@ -144,7 +144,7 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - **Type ID glyph**（在 cell 上疊一小字元 / icon）
   - **經 CVD 測試證明的 silhouette invariance**（3D outline 在色弱下仍可辨；因 `-5°` near-vertical view 對非平面 polycube (RS4/LS4/BR4) 的 silhouette 會退化為 2D 面積，**silhouette 單獨不足**，須配合 pattern 或 glyph）
 - **Active outline 色 vs Locked palette**：`activeOutlineColor` **不得與 locked palette 中任一色重疊**（mockup 目前 cyan `#39e6cf` 同時是 locked I3 之一，違規；M4 實作階段須改配色，Locked palette 由 `oab/design/piece-catalog` + 後續 LA8 palette review 決定）。
-- **顏色距離下限**：Locked palette 兩兩配色之 CVD 距離（Machado et al. 2009 dichromacy matrices）於 deuteranopia / protanopia / tritanopia 三態下**每對 ≥ 0.3**（線性 RGB 距離）；不足者須另配色或依上文 pattern/glyph 補救。
+- **顏色距離下限**：Locked palette 兩兩配色之 CVD 距離（Machado et al. 2009 dichromacy matrices）於 deuteranopia / protanopia / tritanopia 三態下**每對 ≥ 0.3**（**距離定義**：兩色先套 Machado 矩陣模擬 CVD，取 linear RGB clamp `[0, 1]`，再取 Euclidean distance `sqrt((ΔR)² + (ΔG)² + (ΔB)²)`）；不足者須另配色或依上文 pattern/glyph 補救。**注意**：`≥ 0.3` 為 project floor 快篩，**不能取代** pattern/glyph 冗餘；三色盲下部分邊界對即使 ≥ 0.3 仍需 pattern 保證識別（LA7 建議條件寫成「pair ≥ 0.3 OR distinct pattern/glyph」）。
 - **對比度**：所有 outline / grid / warning 對其**背景 + 相鄰元素**的 WCAG 1.4.11 對比 **≥ 3:1**（M4 CVD/contrast automated check 為 accept criteria）。
 - **Ghost vs Active** 主要差異：dash pattern（虛線 vs 實線）+ fill（空 vs 半透明）+ dash pattern 與 warning ring 差異化。
 - **Active vs Locked** 主要差異：outline stroke（非 locked palette 色 1 px vs 無/fill 邊）+ fill（透明 vs 實心 + pattern）。
@@ -244,6 +244,7 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - **WCAG 1.4.11 對比**：所有 outline / grid / warning 對背景與相鄰元素 ≥ 3:1。
   - **DPR 可視性**：見上文 pixel test。
   - **VIMS / 動暈**：`-5°` tilt + 二次 scale 未評估；M4 前段須做 vestibular-sensitive playtest（見 §5）。
+  - **深度誤判 / ghost 高度**：若啟用 depth ruler / contact frame（§5 toggles），M4 須驗證其對 ghost 高度判斷的**有效性**（例：受測者能否在 ghost 低 z 1× vs active 高 z 5.86× 時正確估計相對高度），以確認冗餘訊號真的緩解 LA7 S2 深度誤判風險。
 
 ## 5. 後續行動 (Follow-ups)
 
@@ -309,8 +310,15 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - LA7 B1：§2.3.3 mandate 非顏色冗餘（pattern / glyph / silhouette invariance，需配合 pattern 因 near-vertical view 對 non-planar polycube silhouette 退化）；補 CVD 距離下限 ≥ 0.3；`activeOutlineColor` 不得與 locked palette 重疊；M4 automated check accept criteria。
   - LA7 B2：§2.2.3 warning ring 改為紅色 + non-color cue 複合（dashed baseline + optional pulse w/ reduced-motion off + DOM overlay badge）；WCAG 1.4.11 對比 ≥ 3:1 mandate。
   - LA7 S1：§5 accessibility toggles 加入 `prefers-reduced-motion` + top-down 相機切換；M4 verification 加入 VIMS playtest。
-  - LA7 S2：§5 accessibility toggles 加入 depth ruler / contact frame（參 `oab/design/top-down-z-view`）；§4.5 flag 深度誤判為 M4 verify item。
+  - LA7 S2：§5 加入 depth ruler / contact frame（參 `oab/design/top-down-z-view`）以緩解深度誤判；§4.5 未另列獨立 verify item（於 rev.3.1 補上）。
   - LA7 S3：§2.2.2 / §2.3.2 / §2.3.3 高 DPR pixel test 條款；§4.5 M4 accept criteria pixel test dpr × viewport 矩陣。
   - LA7 S4：§2.2.3 / §2.3.2 renderOrder 交叉表（warning ring 屬 wall 層 0，不遮 locked）；ghost dash `[6, 4]` vs warning dash `[3, 3]` 差異化。
   - LA7 S5：§5 a11y tree via ADR-0007 DOM overlay + ARIA live region；鍵盤走 ADR-0004。
   - LA7 N1：§2.3.2 active outline 色名改用 `activeOutlineColor` tunable（mockup 值 cyan `#39e6cf`）；§2.4 補「不得與 locked palette 重疊」規則。
+- **rev.3.1（2026-07-25）** — 依 LA6 round 2 REVIEW_OK（1 nit）+ LA7 round 2 REVIEW_OK（3 nits + 1 §6 changelog 更正）收斂，皆非 blocking：
+  - LA6 nit（§6 count）：rev.3 狀態行「1 S-B + 4 S + 1 N」更正為「1 S-B + **5** S + 1 N」（S1–S5 共 5 個 Should）。
+  - LA7 N1：§2.2.3 warning pulse 補「頻率上限 ≤ 3 Hz + smooth ramp」（WCAG 2.3.1 Three Flashes or Below Threshold）+ `prefers-reduced-motion` 完全關閉。
+  - LA7 N2：§2.3.3 CVD 距離 metric 補精確定義（Machado 矩陣 → linear RGB clamp `[0, 1]` → Euclidean distance）；並補 note「`≥ 0.3` 為 project floor 快篩，不能取代 pattern/glyph 冗餘」。
+  - LA7 N3：§4.5 a11y M4 verification 新增「深度誤判 / ghost 高度」verify item（驗 depth ruler / contact frame 對 ghost 高度判斷的有效性）。
+  - LA7 §6 S2 wording：更正「§4.5 flag 深度誤判為 M4 verify item」→「§5 depth ruler / contact frame 緩解深度誤判；§4.5 未另列獨立 verify item（於 rev.3.1 補上）」。
+
