@@ -174,7 +174,7 @@
     const s=z=>1+Math.pow(z/12,2)*7;
     // 投影：cell center 從 grid 中心 (40,40) 向外 scale + 垂直偏移（模擬透視堆疊）
     const cx=(x,z)=>40+((x+0.5)*16-40)*s(z);
-    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*2;
+    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*1;
     const half=z=>8*s(z);
 
     // 計算方塊集合的外框 path（投影後座標）
@@ -221,8 +221,8 @@
       const path=document.createElementNS(svgNS,'path');
       path.setAttribute('d',outlinePath(cells,z));
       svg.append(path);
-      // Z=0 底層：畫每個 cell 的格子線
-      if(z===0){
+      // 所有 locked piece：畫每個 cell 的格子線
+      if(className==='locked'){
         const h=half(z);
         for(const [x,y] of cells){
           const X0=cx(x,z)-h,Y0=cy(y,z)-h,X1=cx(x,z)+h,Y1=cy(y,z)+h;
