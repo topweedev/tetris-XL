@@ -1,7 +1,7 @@
 ---
 title: ADR-0008 Well-Shaft Renderer Visual Language
 type: decision
-status: proposed
+status: accepted
 adr_id: "0008"
 repo: topweedev/tetris-XL
 path: docs/adr/0008-well-shaft-renderer-visual-language.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, renderer, visual, three-js, well-shaft, mockup, a11y]
 
 # ADR-0008: Well-Shaft Renderer 視覺語言（Layer 1 全域規則 + Layer 2 Piece 視覺）
 
-- 狀態：Proposed（rev.3.1 — 依 LA6 round 2 nit + LA7 round 2 4 nits 收斂；rev.3 依 LA6 round 1 修 1 S-B + 5 S + 1 N、LA7 round 1 修 2 B + 5 S + 1 N；rev.2 為 LA4 round-1 收斂）
+- 狀態：Accepted（rev.4 — human accept 2026-07-25；三 reviewer 齊過 LA4/LA6/LA7；rev.3.1 收斂 all-nit；rev.3 依 LA6+LA7 round 1；rev.2 依 LA4 round 1；rev.1 draft）
 - 日期：2026-07-25
 - 決策者：LA1 起草，待人類 + review agents (LA6 round 2 / LA7 round 2) 確認
 - 相關文件：
@@ -321,4 +321,5 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - LA7 N2：§2.3.3 CVD 距離 metric 補精確定義（Machado 矩陣 → linear RGB clamp `[0, 1]` → Euclidean distance）；並補 note「`≥ 0.3` 為 project floor 快篩，不能取代 pattern/glyph 冗餘」。
   - LA7 N3：§4.5 a11y M4 verification 新增「深度誤判 / ghost 高度」verify item（驗 depth ruler / contact frame 對 ghost 高度判斷的有效性）。
   - LA7 §6 S2 wording：更正「§4.5 flag 深度誤判為 M4 verify item」→「§5 depth ruler / contact frame 緩解深度誤判；§4.5 未另列獨立 verify item（於 rev.3.1 補上）」。
+- **rev.4（2026-07-25，Accepted）** — 人類 accept 為 accepted status。同 commit 中 sync amend ADR-0001 §2.5 alt-mode 表述為「near-vertical top-down 家族（0° ± 小傾角，具體規範見 ADR-0008）」（ADR-0001 rev.7），滿足 LA4 S1 path (b) sync-amend 約束。三 reviewer 齊過紀錄：LA4 REVIEW_OK (round 1 + 2)、LA6 REVIEW_OK (round 2)、LA7 REVIEW_OK (round 2)。無新內容變更；本 rev 純為 status transition + upstream sync。
 
