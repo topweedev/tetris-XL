@@ -170,16 +170,17 @@
 
   <script>
     const s=z=>1+(z/12)*7;
-    // 投影 cell (x,y) at height z → absolute screen coords in funnel space (centered at 40,40)
-    const px=(x,z)=>40+((x+0.5)*16-40)*s(z);
-    const py=(y,z)=>40+((y+0.5)*16-40)*s(z);
+    // 投影 cell (x,y) at height z → cell center 固定，只有大小隨 z 放大
+    const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
+    const half=z=>8*s(z); // half cell size at height z
 
     // 計算方塊集合的外框 path（投影後座標）
     function outlinePath(cells,z){
       const set=new Set(cells.map(([x,y])=>`${x},${y}`));
       const edgeMap=new Map();
+      const h=half(z);
       for(const [x,y] of cells){
-        const X0=px(x,z),Y0=py(y,z),X1=px(x+1,z),Y1=py(y+1,z);
+        const X0=cx(x)-h,Y0=cy(y)-h,X1=cx(x)+h,Y1=cy(y)+h;
         const candidates=[
           [X0,Y0,X1,Y0],
           [X1,Y0,X1,Y1],
