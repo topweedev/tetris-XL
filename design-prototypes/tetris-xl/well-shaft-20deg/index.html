@@ -170,8 +170,9 @@
 
   <script>
     const s=z=>1+(z/12)*7;
-    // 投影 cell (x,y) at height z → cell center 固定，只有大小隨 z 放大
-    const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
+    // 投影：cell center 固定 X，Y 隨 z 上移（模擬透視堆疊），size 隨 z 放大
+    const cx=x=>(x+0.5)*16;
+    const cy=(y,z)=>(y+0.5)*16 - z*8; // 每層上移 8px
     const half=z=>8*s(z); // half cell size at height z
 
     // 計算方塊集合的外框 path（投影後座標）
@@ -180,7 +181,7 @@
       const edgeMap=new Map();
       const h=half(z);
       for(const [x,y] of cells){
-        const X0=cx(x)-h,Y0=cy(y)-h,X1=cx(x)+h,Y1=cy(y)+h;
+        const X0=cx(x)-h,Y0=cy(y,z)-h,X1=cx(x)+h,Y1=cy(y,z)+h;
         const candidates=[
           [X0,Y0,X1,Y0],
           [X1,Y0,X1,Y1],
