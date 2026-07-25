@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tetris-XL · -5° · 非物理強透視 · 方塊遮擋測試</title>
+  <title>Tetris-XL · -5° · Z=10 · L piece · 2px wireframe</title>
   <style>
     :root{
       --bg:#07090d;
@@ -13,7 +13,6 @@
       --cyan:#39e6cf;
       --rim:#aeb6c8;
       --rim-soft:rgba(174,182,200,.18);
-      --wall-edge:rgba(140,184,216,.22);
       --grid-soft:rgba(143,179,205,.18);
       --danger:#ff667d;
       --orange:#ff984c;
@@ -32,14 +31,17 @@
     .camera-value{display:block;margin-top:5px;font:800 18px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
     .camera-sub{display:block;margin-top:5px;color:var(--muted);font-size:9px}
 
-    .states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}
-    .state{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(25,31,43,.98),rgba(10,14,20,.98));box-shadow:0 22px 58px rgba(0,0,0,.25)}
-    .state-head{display:flex;align-items:center;gap:12px;padding:15px 17px 11px}
-    .state-id{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(57,230,207,.38);border-radius:8px;color:var(--cyan);background:rgba(57,230,207,.07);font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
-    .state-head h2{margin:0;font-size:15px}
-    .state-sub{margin-top:3px;color:var(--muted);font-size:9px}
+    .stage-wrap{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(25,31,43,.98),rgba(10,14,20,.98));box-shadow:0 22px 58px rgba(0,0,0,.25);overflow:hidden}
+    .stage-head{display:flex;align-items:center;gap:14px;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+    .stage-id{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(57,230,207,.38);border-radius:8px;color:var(--cyan);background:rgba(57,230,207,.07);font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .stage-head h2{margin:0;font-size:16px}
+    .stage-head .sub{margin-top:3px;color:var(--muted);font-size:10px}
+    .stage-head .spacer{flex:1}
+    .legend{display:flex;gap:14px;flex-wrap:wrap}
+    .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+    .legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
 
-    .stage{position:relative;height:620px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(41,57,75,.5),rgba(5,8,12,.94) 70%)}
+    .stage{position:relative;height:760px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(41,57,75,.5),rgba(5,8,12,.94) 70%)}
 
     .funnel{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%) perspective(2400px) rotateX(-5deg);transform-style:preserve-3d}
 
@@ -52,6 +54,7 @@
     .ring.danger{border-color:rgba(255,102,125,.45);border-style:dashed;border-width:1.5px}
 
     .rim-top{position:absolute;inset:0;border:2.5px solid var(--rim);box-shadow:0 0 28px rgba(174,182,200,.22),inset 0 0 18px rgba(174,182,200,.08);pointer-events:none;transform:scale(8);transform-origin:center}
+    .rim-top::before{content:"井口 · Z=12";position:absolute;left:50%;top:-22px;transform:translateX(-50%);color:var(--rim);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;white-space:nowrap}
 
     .wall-face{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%);pointer-events:none}
     .wall-face i{position:absolute;inset:0}
@@ -65,45 +68,42 @@
     /* locked = 實心 */
     .blk.locked{border:1px solid rgba(255,255,255,.35);background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -4px 8px rgba(0,0,0,.35),0 0 6px rgba(0,0,0,.4)}
     .blk.locked::after{content:"";position:absolute;inset:2px;border-top:1px solid rgba(255,255,255,.25);border-left:1px solid rgba(255,255,255,.15)}
-    /* active = 線框 only */
-    .blk.active{border:2px solid var(--cyan);background:rgba(57,230,207,.06);box-shadow:0 0 14px rgba(57,230,207,.35)}
-    .blk.active::after{content:"";position:absolute;inset:2px;border:1px solid rgba(57,230,207,.45)}
+    /* active = 線框 only 2px，無內框、無 glow */
+    .blk.active{border:2px solid var(--cyan);background:transparent}
     /* ghost = 角落框 */
     .blk.ghost{border:1px dashed rgba(237,244,255,.5);background:transparent}
     .blk.ghost::before,.blk.ghost::after{content:"";position:absolute;width:5px;height:5px;border:1px solid rgba(237,244,255,.7)}
     .blk.ghost::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
     .blk.ghost::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
 
-    .axis{position:absolute;right:14px;top:50px;bottom:50px;width:62px}
-    .axis-title{position:absolute;right:0;top:-20px;color:#8d9aac;font:800 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
-    .axis-line{position:absolute;left:14px;top:0;bottom:0;width:1px;background:linear-gradient(var(--danger),rgba(125,169,201,.4) 8%,rgba(125,169,201,.4) 92%,var(--orange))}
-    .tick{position:absolute;left:8px;width:13px;height:1px;background:rgba(171,200,222,.5);transform:translateY(-50%)}
-    .tick.major{width:19px;left:2px;background:rgba(200,220,240,.75)}
-    .tick span{position:absolute;left:18px;top:-5px;color:#768599;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+    .axis{position:absolute;right:20px;top:60px;bottom:60px;width:70px}
+    .axis-title{position:absolute;right:0;top:-22px;color:#8d9aac;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+    .axis-line{position:absolute;left:16px;top:0;bottom:0;width:1px;background:linear-gradient(var(--danger),rgba(125,169,201,.4) 8%,rgba(125,169,201,.4) 92%,var(--orange))}
+    .tick{position:absolute;left:10px;width:13px;height:1px;background:rgba(171,200,222,.5);transform:translateY(-50%)}
+    .tick.major{width:19px;left:4px;background:rgba(200,220,240,.75)}
+    .tick span{position:absolute;left:20px;top:-5px;color:#768599;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
     .tick.major span{color:#c7d0dc;font-weight:700}
     .tick.danger span{color:var(--danger)}
-    .marker{position:absolute;left:6px;width:15px;height:15px;transform:translateY(-50%);border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(57,230,207,.5);border:2px solid #0a1018}
-    .marker::after{content:attr(data-label);position:absolute;left:20px;top:0;color:var(--cyan);font:800 7px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+    .marker{position:absolute;left:8px;width:15px;height:15px;transform:translateY(-50%);border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(57,230,207,.5);border:2px solid #0a1018}
+    .marker::after{content:attr(data-label);position:absolute;left:22px;top:0;color:var(--cyan);font:800 7px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
 
-    .note{position:absolute;display:flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:rgba(6,9,13,.85);backdrop-filter:blur(4px);color:#c7d0dc;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
-    .note::before{content:"";width:5px;height:5px;border-radius:2px;background:currentColor}
-    .note-locked{left:14px;bottom:14px;color:var(--orange)}
-    .note-active{left:14px;top:14px;color:var(--cyan)}
-    .note-occlude{right:90px;top:14px;color:var(--danger)}
+    .note{position:absolute;display:flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(6,9,13,.85);backdrop-filter:blur(4px);color:#c7d0dc;font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+    .note::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor}
+    .note-locked{left:24px;bottom:22px;color:var(--orange)}
+    .note-active{left:24px;top:22px;color:var(--cyan)}
+    .note-wire{left:24px;top:120px;color:var(--cyan)}
 
-    .z-chip{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:5px 8px;border:1px solid rgba(57,230,207,.32);border-radius:99px;color:var(--cyan);background:rgba(10,18,22,.82);font:800 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+    .z-chip{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(57,230,207,.32);border-radius:99px;color:var(--cyan);background:rgba(10,18,22,.82);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
 
-    .state-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:5px 17px 17px}
-    .cue{padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.04)}
+    .stage-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px 18px;border-top:1px solid var(--line)}
+    .cue{padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.04)}
     .cue-label{color:var(--muted);font-size:7px;letter-spacing:.09em;text-transform:uppercase}
     .cue-value{display:block;margin-top:4px;font-size:10px;font-weight:750}
 
-    .observe{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid rgba(255,102,125,.3);border-radius:14px;background:rgba(255,102,125,.05)}
-    .observe strong{color:var(--danger);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
-    .observe span{color:#cbd4df;font-size:11px;line-height:1.55}
+    .meta{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid rgba(57,230,207,.25);border-radius:14px;background:rgba(57,230,207,.055)}
+    .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
 
-    @media(max-width:900px){header{grid-template-columns:1fr}.states{grid-template-columns:1fr}.stage{height:560px}}
-    @media(max-width:560px){main{padding:23px 10px 34px}.camera{min-width:0}.stage{height:480px}.axis{right:6px;width:48px}.tick span{font-size:6px}.note{font-size:6px;padding:4px 6px}.note-occlude{right:60px}.state-foot{padding:3px 12px 13px}.cue{padding:8px}.cue-value{font-size:8px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
   </style>
 </head>
@@ -111,107 +111,76 @@
   <main>
     <header>
       <div>
-        <p class="eyebrow">Tetris-XL · Design brief · 方塊遮擋測試</p>
-        <h1>-5° 非物理強透視 · 加方塊 · 線框 vs 實心</h1>
-        <p class="intro">底層已有數個 locked 實心方塊尚未消除，active piece 線框 only。對比 active 在高處 (Z=8) 與接近底部 (Z=3) 兩種狀態，觀察視線是否被遮擋。非物理 scale：井底 0.5x → 井口 8x，越靠近 viewer 的方塊視覺越大。</p>
+        <p class="eyebrow">Tetris-XL · Design brief · Z=10 · L piece · 2px wireframe</p>
+        <h1>-5° 非物理強透視 · Active Z10 · L 方塊 · 線框 2px</h1>
+        <p class="intro">底層已有數個 locked 實心方塊尚未消除，active 是 4-cell L 方塊，線框只有 2px（無內框、無 glow、透明 fill）。active 在 Z=10（警戒高度），觀察線框是否遮擋底層視線。</p>
       </div>
       <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 0.5x</span></div>
     </header>
 
-    <section class="states" aria-label="方塊遮擋對比">
-      <!-- State 1: Active high Z=8 -->
-      <article class="state">
-        <div class="state-head"><span class="state-id">01</span><div><h2>下降中 · Active Z8</h2><div class="state-sub">線框方塊在高處，scale ~5.5x · 底層實心方塊 scale 0.5x</div></div></div>
-        <div class="stage">
-          <div class="z-chip">ACTIVE Z8 · DROP 4</div>
-          <div class="funnel" id="funnel-1">
-            <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
-            <i class="ring" style="--s:1.13"></i><i class="ring" style="--s:1.75"></i><i class="ring" style="--s:2.38"></i><i class="ring" style="--s:3.00"></i><i class="ring" style="--s:3.63"></i><i class="ring" style="--s:4.25"></i><i class="ring" style="--s:4.88"></i><i class="ring" style="--s:5.50"></i><i class="ring" style="--s:6.13"></i><i class="ring danger" style="--s:6.75"></i><i class="ring" style="--s:7.37"></i>
-            <i class="rim-top"></i>
-            <div class="floor" id="floor-1"></div>
-          </div>
-          <div class="axis">
-            <span class="axis-title">Z DEPTH</span>
-            <i class="axis-line"></i>
-            <i class="tick major" style="top:0%"><span>12</span></i>
-            <i class="tick" style="top:8.33%"><span>11</span></i>
-            <i class="tick danger" style="top:16.66%"><span>10</span></i>
-            <i class="tick" style="top:25%"><span>9</span></i>
-            <i class="tick" style="top:33.33%"><span>8</span></i>
-            <i class="tick" style="top:41.66%"><span>7</span></i>
-            <i class="tick" style="top:50%"><span>6</span></i>
-            <i class="tick" style="top:58.33%"><span>5</span></i>
-            <i class="tick" style="top:66.66%"><span>4</span></i>
-            <i class="tick" style="top:75%"><span>3</span></i>
-            <i class="tick" style="top:83.33%"><span>2</span></i>
-            <i class="tick" style="top:91.66%"><span>1</span></i>
-            <i class="tick major" style="top:100%"><span>0</span></i>
-            <i class="marker" data-label="Z8" style="top:33.33%"></i>
-          </div>
-          <span class="note note-active">線框 · ACTIVE · 透明可透視</span>
-          <span class="note note-locked">實心 · LOCKED · 底層</span>
-          <span class="note note-occlude">遮擋風險：高</span>
+    <section class="stage-wrap" aria-label="Z=10 L piece 2px wireframe">
+      <div class="stage-head">
+        <span class="stage-id">01</span>
+        <div><h2>警戒高度 · Active Z10 · L piece</h2><div class="sub">4-cell L 方塊 · 線框 2px only · 底層 locked 實心</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:var(--cyan);border:2px solid var(--cyan);background:transparent"></i>Active 線框 2px</span>
+          <span><i style="background:var(--orange)"></i>Locked 實心</span>
+          <span><i style="background:rgba(255,102,125,.5)"></i>警戒 Z=10</span>
+          <span><i style="background:var(--rim)"></i>井口 Z=12</span>
         </div>
-        <div class="state-foot">
-          <div class="cue"><span class="cue-label">Active scale</span><span class="cue-value">~5.5x · 88px/cell</span></div>
-          <div class="cue"><span class="cue-label">Locked scale</span><span class="cue-value">0.5x · 8px/cell</span></div>
-          <div class="cue"><span class="cue-label">底層可見</span><span class="cue-value">線框透視 · 可見</span></div>
-        </div>
-      </article>
+      </div>
 
-      <!-- State 2: Active low Z=3, near contact -->
-      <article class="state">
-        <div class="state-head"><span class="state-id">02</span><div><h2>接近落點 · Active Z3</h2><div class="state-sub">線框方塊接近底部，scale ~2.4x · 即將 lock 變實心</div></div></div>
-        <div class="stage">
-          <div class="z-chip">ACTIVE Z3 · DROP 1</div>
-          <div class="funnel" id="funnel-2">
-            <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
-            <i class="ring" style="--s:1.13"></i><i class="ring" style="--s:1.75"></i><i class="ring" style="--s:2.38"></i><i class="ring" style="--s:3.00"></i><i class="ring" style="--s:3.63"></i><i class="ring" style="--s:4.25"></i><i class="ring" style="--s:4.88"></i><i class="ring" style="--s:5.50"></i><i class="ring" style="--s:6.13"></i><i class="ring danger" style="--s:6.75"></i><i class="ring" style="--s:7.37"></i>
-            <i class="rim-top"></i>
-            <div class="floor" id="floor-2"></div>
-          </div>
-          <div class="axis">
-            <span class="axis-title">Z DEPTH</span>
-            <i class="axis-line"></i>
-            <i class="tick major" style="top:0%"><span>12</span></i>
-            <i class="tick" style="top:8.33%"><span>11</span></i>
-            <i class="tick danger" style="top:16.66%"><span>10</span></i>
-            <i class="tick" style="top:25%"><span>9</span></i>
-            <i class="tick" style="top:33.33%"><span>8</span></i>
-            <i class="tick" style="top:41.66%"><span>7</span></i>
-            <i class="tick" style="top:50%"><span>6</span></i>
-            <i class="tick" style="top:58.33%"><span>5</span></i>
-            <i class="tick" style="top:66.66%"><span>4</span></i>
-            <i class="tick" style="top:75%"><span>3</span></i>
-            <i class="tick" style="top:83.33%"><span>2</span></i>
-            <i class="tick" style="top:91.66%"><span>1</span></i>
-            <i class="tick major" style="top:100%"><span>0</span></i>
-            <i class="marker" data-label="Z3" style="top:75%"></i>
-          </div>
-          <span class="note note-active">線框 · 即將 lock</span>
-          <span class="note note-locked">實心 · LOCKED · 底層</span>
-          <span class="note note-occlude" style="color:var(--orange)">遮擋風險：低</span>
+      <div class="stage">
+        <div class="z-chip">ACTIVE Z10 · DROP 2 · L PIECE</div>
+        <div class="funnel" id="funnel">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.13"></i><i class="ring" style="--s:1.75"></i><i class="ring" style="--s:2.38"></i><i class="ring" style="--s:3.00"></i><i class="ring" style="--s:3.63"></i><i class="ring" style="--s:4.25"></i><i class="ring" style="--s:4.88"></i><i class="ring" style="--s:5.50"></i><i class="ring" style="--s:6.13"></i><i class="ring danger" style="--s:6.75"></i><i class="ring" style="--s:7.37"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor"></div>
         </div>
-        <div class="state-foot">
-          <div class="cue"><span class="cue-label">Active scale</span><span class="cue-value">~2.4x · 38px/cell</span></div>
-          <div class="cue"><span class="cue-label">Locked scale</span><span class="cue-value">0.5x · 8px/cell</span></div>
-          <div class="cue"><span class="cue-label">底層可見</span><span class="cue-value">清楚 · 尺寸接近</span></div>
+
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+          <i class="marker" data-label="Z10" style="top:16.66%"></i>
         </div>
-      </article>
+
+        <span class="note note-active">線框 2px · ACTIVE · 透明 fill</span>
+        <span class="note note-locked">實心 · LOCKED · 底層</span>
+        <span class="note note-wire">L piece · 4 cell · 無內框無 glow</span>
+      </div>
+
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
+        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · scale 6.75x</span></div>
+        <div class="cue"><span class="cue-label">線框</span><span class="cue-value">2px only · 透明</span></div>
+        <div class="cue"><span class="cue-label">底層</span><span class="cue-value">locked 實心 · 0.5x–1.75x</span></div>
+      </div>
     </section>
 
-    <div class="observe"><strong>觀察重點</strong><span>非物理 scale 下，active 在高處 (Z=8) 時線框方塊視覺面積遠大於底層實心方塊（5.5x vs 0.5x = 11 倍差）。但因為 active 是線框（透明 fill），底層實心方塊仍可透過線框看見。遮擋程度取決於線框粗細與底層方塊的對比。active 接近底部 (Z=3) 時尺寸差縮小（2.4x vs 0.5x = 5 倍），遮擋風險低。</span></div>
+    <div class="meta"><strong>這份要確認什麼</strong><span>Z=10 警戒高度，4-cell L 方塊線框只有 2px（無內框、無 glow、透明 fill），是否仍清晰可見、是否遮擋底層實心方塊。</span></div>
   </main>
 
   <script>
-    // 5x5 floor grids
     const lockedColors=['#ff984c','#ffcb57','#4c9dff','#b776ff','#50d287'];
-    // s(z) = 0.5 + (z/12)*7.5
     const s=z=>0.5+(z/12)*7.5;
-    // cell center in 80px space: (x+0.5)*16, (y+0.5)*16
     const cx=x=>(x+0.5)*16, cy=y=>(y+0.5)*16;
 
-    // Locked blocks at bottom (same in both states)
+    // Locked blocks at bottom
     const locked=[
       // Z=0
       {x:0,y:4,z:0,c:0},{x:1,y:4,z:0,c:1},{x:2,y:4,z:0,c:2},{x:3,y:4,z:0,c:3},{x:4,y:4,z:0,c:4},
@@ -223,53 +192,44 @@
       {x:2,y:3,z:2,c:2},
     ];
 
-    // Active T4 piece (relative cells): (0,0),(1,0),(2,0),(1,1) — T shape
-    const activeRel=[[0,0],[1,0],[2,0],[1,1]];
-    // Ghost = same X/Y, Z=0
+    // L piece (4 cells): (0,0),(0,1),(0,2),(1,2) — L shape
+    const activeRel=[[0,0],[0,1],[0,2],[1,2]];
     const ghostRel=activeRel;
 
-    function buildFloor(id){
-      const f=document.getElementById(id);
-      for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cell';f.append(c);}
-    }
+    const f=document.getElementById('funnel');
+    const floor=document.getElementById('floor');
+    for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cell';floor.append(c);}
 
-    function addBlocks(funnelId, activeZ){
-      const f=document.getElementById(funnelId);
-      // locked blocks
-      locked.forEach(b=>{
-        const d=document.createElement('div');
-        d.className='blk locked';
-        d.style.setProperty('--c',lockedColors[b.c]);
-        d.style.setProperty('--s',s(b.z));
-        d.style.left=cx(b.x)+'px';
-        d.style.top=cy(b.y)+'px';
-        f.append(d);
-      });
-      // active piece — anchor at (1,1) in grid, T shape
-      const ax=1, ay=1;
-      activeRel.forEach(([dx,dy])=>{
-        const d=document.createElement('div');
-        d.className='blk active';
-        d.style.setProperty('--s',s(activeZ));
-        d.style.left=cx(ax+dx)+'px';
-        d.style.top=cy(ay+dy)+'px';
-        f.append(d);
-      });
-      // ghost at Z=0 (landing position)
-      ghostRel.forEach(([dx,dy])=>{
-        const d=document.createElement('div');
-        d.className='blk ghost';
-        d.style.setProperty('--s',s(0));
-        d.style.left=cx(ax+dx)+'px';
-        d.style.top=cy(ay+dy)+'px';
-        f.append(d);
-      });
-    }
+    locked.forEach(b=>{
+      const d=document.createElement('div');
+      d.className='blk locked';
+      d.style.setProperty('--c',lockedColors[b.c]);
+      d.style.setProperty('--s',s(b.z));
+      d.style.left=cx(b.x)+'px';
+      d.style.top=cy(b.y)+'px';
+      f.append(d);
+    });
 
-    buildFloor('floor-1');
-    buildFloor('floor-2');
-    addBlocks('funnel-1',8);
-    addBlocks('funnel-2',3);
+    // Active L piece at Z=10, anchor at (2,1)
+    const ax=2, ay=1, az=10;
+    activeRel.forEach(([dx,dy])=>{
+      const d=document.createElement('div');
+      d.className='blk active';
+      d.style.setProperty('--s',s(az));
+      d.style.left=cx(ax+dx)+'px';
+      d.style.top=cy(ay+dy)+'px';
+      f.append(d);
+    });
+
+    // Ghost at Z=0 (landing)
+    ghostRel.forEach(([dx,dy])=>{
+      const d=document.createElement('div');
+      d.className='blk ghost';
+      d.style.setProperty('--s',s(0));
+      d.style.left=cx(ax+dx)+'px';
+      d.style.top=cy(ay+dy)+'px';
+      f.append(d);
+    });
   </script>
 </body>
 </html>
