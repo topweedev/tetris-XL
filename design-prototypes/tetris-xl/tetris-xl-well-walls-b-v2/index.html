@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris-XL · 井壁 B-v2 · 格線 wireframe + active column highlight + depth-fade</title>
+  <style>
+    :root{
+      --bg:#07090d;
+      --text:#f3f6fa;
+      --muted:#96a1b4;
+      --line:rgba(255,255,255,.1);
+      --cyan:#39e6cf;
+      --rim:#aeb6c8;
+      --rim-soft:rgba(174,182,200,.18);
+      --grid-soft:rgba(143,179,205,.18);
+      --grid-cool:#7fa8c9;          /* 格線偏冷藍灰，與 rim 區隔 */
+      --danger:#ff667d;
+      --orange:#ff984c;
+      --base:80px;
+    }
+    *{box-sizing:border-box}
+    html{background:var(--bg);color-scheme:dark}
+    body{margin:0;min-width:320px;color:var(--text);background:radial-gradient(circle at 50% -20%,#253147 0,#0c1118 42%,var(--bg) 76%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(1320px,100%);margin:0 auto;padding:32px clamp(15px,4vw,52px) 46px}
+    header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:25px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+    .eyebrow{margin:0 0 9px;color:var(--cyan);font-size:10px;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+    h1{margin:0;max-width:820px;font-size:clamp(26px,3.4vw,42px);line-height:1.05;letter-spacing:-.045em}
+    .intro{max-width:820px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.65}
+    .camera{min-width:205px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:rgba(13,17,24,.8)}
+    .camera-title{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    .camera-value{display:block;margin-top:5px;font:800 18px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .camera-sub{display:block;margin-top:5px;color:var(--muted);font-size:9px}
+
+    .stage-wrap{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(25,31,43,.98),rgba(10,14,20,.98));box-shadow:0 22px 58px rgba(0,0,0,.25);overflow:hidden}
+    .stage-head{display:flex;align-items:center;gap:14px;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+    .stage-id{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(57,230,207,.38);border-radius:8px;color:var(--cyan);background:rgba(57,230,207,.07);font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .stage-head h2{margin:0;font-size:16px}
+    .stage-head .sub{margin-top:3px;color:var(--muted);font-size:10px}
+    .stage-head .spacer{flex:1}
+    .legend{display:flex;gap:14px;flex-wrap:wrap}
+    .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+    .legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
+
+    .stage{position:relative;height:760px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(41,57,75,.5),rgba(5,8,12,.94) 70%)}
+
+    .funnel{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%) perspective(2400px) rotateX(-5deg);transform-style:preserve-3d}
+
+    .floor{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border:2px solid var(--rim);background:#0a1018;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 0 24px rgba(0,0,0,.6);transform:scale(1);transform-origin:center}
+    .floor .cell{position:relative;border-right:1px solid var(--grid-soft);border-bottom:1px solid var(--grid-soft)}
+    .floor .cell:nth-child(5n){border-right:0}
+    .floor .cell:nth-child(n+21){border-bottom:0}
+
+    .ring{position:absolute;inset:0;border:1px solid var(--rim-soft);pointer-events:none;transform:scale(var(--s));transform-origin:center}
+    .ring.danger{border-color:rgba(255,102,125,.45);border-style:dashed;border-width:1.5px}
+
+    .rim-top{position:absolute;inset:0;border:2.5px solid var(--rim);box-shadow:0 0 28px rgba(174,182,200,.22),inset 0 0 18px rgba(174,182,200,.08);pointer-events:none;transform:scale(8);transform-origin:center}
+    .rim-top::before{content:"井口 · Z=12";position:absolute;left:50%;top:-22px;transform:translateX(-50%);color:var(--rim);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;white-space:nowrap}
+
+    /* 井壁面：極淡（B-v2 進一步降低，因為格線才是主角） */
+    .wall-face{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%);pointer-events:none}
+    .wall-face i{position:absolute;inset:0}
+    .wall-n{clip-path:polygon(25% 25%,75% 25%,800% -700%,-700% -700%);background:linear-gradient(180deg,rgba(120,150,180,.015),rgba(120,150,180,.04))}
+    .wall-s{clip-path:polygon(25% 25%,75% 25%,800% 1700%,-700% 1700%);background:linear-gradient(0deg,rgba(120,150,180,.015),rgba(120,150,180,.03));opacity:.4}
+    .wall-w{clip-path:polygon(25% 25%,25% 75%,-700% 1700%,-700% -700%);background:linear-gradient(90deg,rgba(120,150,180,.015),rgba(120,150,180,.04))}
+    .wall-e{clip-path:polygon(75% 25%,75% 75%,1700% 1700%,1700% -700%);background:linear-gradient(270deg,rgba(120,150,180,.015),rgba(120,150,180,.03));opacity:.4}
+
+    /* 格線 / 角柱 / active column / footprint = SVG，座標已投影 */
+    .grid-svg,.piece-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+    .piece-svg.active path{fill:transparent;stroke:var(--cyan);stroke-width:1;stroke-linejoin:miter}
+    .piece-svg.ghost path{fill:rgba(237,244,255,.05);stroke:rgba(237,244,255,.85);stroke-width:1.5;stroke-dasharray:4 2;stroke-linejoin:miter}
+    .piece-svg.locked path{fill:var(--c);stroke:rgba(255,255,255,.3);stroke-width:0.5;stroke-linejoin:miter}
+
+    .axis{position:absolute;right:20px;top:60px;bottom:60px;width:70px}
+    .axis-title{position:absolute;right:0;top:-22px;color:#8d9aac;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+    .axis-line{position:absolute;left:16px;top:0;bottom:0;width:1px;background:linear-gradient(var(--danger),rgba(125,169,201,.4) 8%,rgba(125,169,201,.4) 92%,var(--orange))}
+    .tick{position:absolute;left:10px;width:13px;height:1px;background:rgba(171,200,222,.5);transform:translateY(-50%)}
+    .tick.major{width:19px;left:4px;background:rgba(200,220,240,.75)}
+    .tick span{position:absolute;left:20px;top:-5px;color:#768599;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+    .tick.major span{color:#c7d0dc;font-weight:700}
+    .tick.danger span{color:var(--danger)}
+    .marker{position:absolute;left:8px;width:15px;height:15px;transform:translateY(-50%);border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(57,230,207,.5);border:2px solid #0a1018}
+    .marker::after{content:attr(data-label);position:absolute;left:22px;top:0;color:var(--cyan);font:800 7px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+
+    .note{position:absolute;display:flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(6,9,13,.85);backdrop-filter:blur(4px);color:#c7d0dc;font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+    .note::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor}
+    .note-active{left:24px;top:22px;color:var(--cyan)}
+    .note-column{left:24px;top:60px;color:#9fc7e8}
+    .note-locked{left:24px;bottom:22px;color:var(--orange)}
+    .note-footprint{left:24px;bottom:60px;color:var(--cyan)}
+
+    .z-chip{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(57,230,207,.32);border-radius:99px;color:var(--cyan);background:rgba(10,18,22,.82);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+
+    .stage-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px 18px;border-top:1px solid var(--line)}
+    .cue{padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.04)}
+    .cue-label{color:var(--muted);font-size:7px;letter-spacing:.09em;text-transform:uppercase}
+    .cue-value{display:block;margin-top:4px;font-size:10px;font-weight:750}
+
+    .meta{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid rgba(57,230,207,.25);border-radius:14px;background:rgba(57,230,207,.055)}
+    .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
+
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Tetris-XL · Design brief · 井壁 B-v2 · 格線 wireframe 優化</p>
+        <h1>B-v2 · 格線 wireframe + active column highlight + depth-fade</h1>
+        <p class="intro">在 B 的格線 wireframe 井壁基礎上做四項優化：(1) active piece 所在 X/Y 直條的牆面格線亮化（active column highlight）；(2) 格線 depth-fade，越近井底越亮、越近井口越淡；(3) 南/東被遮蔽壁面格線進一步弱化；(4) 格線用偏冷藍灰與深度環 rim 色區隔。井底 active 落點正下方 cell 加柔光 footprint。</p>
+      </div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 1x</span></div>
+    </header>
+
+    <section class="stage-wrap" aria-label="B-v2 grid wireframe optimized">
+      <div class="stage-head">
+        <span class="stage-id">B2</span>
+        <div><h2>格線 wireframe 優化 · Active Z10 · L piece</h2><div class="sub">active column highlight · depth-fade 格線 · 冷藍灰與深度環區隔 · 落點 footprint glow</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:rgba(127,168,201,.5)"></i>格線 depth-fade</span>
+          <span><i style="background:rgba(127,168,201,.95)"></i>Active column 亮化</span>
+          <span><i style="border:1px solid var(--cyan);background:transparent"></i>Active 線框</span>
+          <span><i style="border:1px dashed rgba(237,244,255,.6);background:transparent"></i>Ghost</span>
+          <span><i style="background:var(--orange)"></i>Locked</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="z-chip">B2 · GRID + ACTIVE COL + DEPTH-FADE</div>
+        <div class="funnel" id="funnel">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor"></div>
+        </div>
+
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+          <i class="marker" data-label="Z10" style="top:16.66%"></i>
+        </div>
+
+        <span class="note note-active">綠色線框 · ACTIVE · L 形狀</span>
+        <span class="note note-column">亮藍格線 · ACTIVE COLUMN · 落點 X/Y</span>
+        <span class="note note-locked">實心 · LOCKED · 底層</span>
+        <span class="note note-footprint">柔光 · FOOTPRINT · 落點 cell</span>
+      </div>
+
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
+        <div class="cue"><span class="cue-label">Active</span><span class="cue-value">Z10 · L piece · scale 5.86x</span></div>
+        <div class="cue"><span class="cue-label">Active column</span><span class="cue-value">x=1..3 / y=1..2 亮化</span></div>
+        <div class="cue"><span class="cue-label">格線</span><span class="cue-value">depth-fade · 冷藍灰 0.5/0.8px</span></div>
+      </div>
+    </section>
+
+    <div class="meta"><strong>這份要確認什麼</strong><span>B-v2 在 B 的格線 wireframe 上加四項優化：active column highlight（落點 X/Y 直條牆線亮化）、depth-fade（近井底越亮）、弱化被遮蔽的南/東壁、格線冷藍灰與深度環區隔。井底落點 cell 加 footprint glow。其餘 renderer 規則（相機、scale、深度環、警戒環、井口 rim）維持 ADR-0008 不變。</span></div>
+  </main>
+
+  <script>
+    // 非物理 scale（同 ADR-0008）
+    const s=z=>1+Math.pow(z/12,2)*7;
+    // 投影：cell center 從 grid 中心 (40,40) 向外 scale + 垂直偏移
+    const cx=(x,z)=>40+((x+0.5)*16-40)*s(z);
+    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*1;
+    const half=z=>8*s(z);
+
+    // depth-fade：z=0 最亮（1.0），z=12 最淡（0.25），線性
+    const fade=z=>1-(z/12)*0.75;
+
+    // 計算方塊集合的外框 path
+    function outlinePath(cells,z,xoff){
+      const xo=xoff||0;
+      const set=new Set(cells.map(([x,y])=>`${x},${y}`));
+      const edgeMap=new Map();
+      const h=half(z);
+      for(const [x,y] of cells){
+        const X0=cx(x,z)+xo-h,Y0=cy(y,z)-h,X1=cx(x,z)+xo+h,Y1=cy(y,z)+h;
+        const candidates=[[X0,Y0,X1,Y0],[X1,Y0,X1,Y1],[X1,Y1,X0,Y1],[X0,Y1,X0,Y0]];
+        for(const e of candidates){
+          const key=e.map(v=>v.toFixed(2)).join(',');
+          const rev=[e[2],e[3],e[0],e[1]].map(v=>v.toFixed(2)).join(',');
+          if(edgeMap.has(rev)){edgeMap.delete(rev);}
+          else{edgeMap.set(key,e);}
+        }
+      }
+      const edges=[...edgeMap.values()];
+      const sorted=[edges.shift()];
+      while(edges.length){
+        const last=sorted[sorted.length-1];
+        const idx=edges.findIndex(e=>(Math.abs(e[0]-last[2])<0.01&&Math.abs(e[1]-last[3])<0.01)||(Math.abs(e[2]-last[2])<0.01&&Math.abs(e[3]-last[3])<0.01));
+        if(idx<0)break;
+        let e=edges.splice(idx,1)[0];
+        if(Math.abs(e[2]-last[2])<0.01&&Math.abs(e[3]-last[3])<0.01)e=[e[2],e[3],e[0],e[1]];
+        sorted.push(e);
+      }
+      let d=`M${sorted[0][0].toFixed(2)},${sorted[0][1].toFixed(2)}`;
+      for(const e of sorted)d+=` L${e[2].toFixed(2)},${e[3].toFixed(2)}`;
+      return d+' Z';
+    }
+
+    function pieceSVG(cells,className,z,fillColor,xOff){
+      const xoff=xOff||0;
+      const svgNS='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('class',`piece-svg ${className}`);
+      if(fillColor)svg.style.setProperty('--c',fillColor);
+      const path=document.createElementNS(svgNS,'path');
+      path.setAttribute('d',outlinePath(cells,z,xoff));
+      svg.append(path);
+      {
+        const h=half(z);
+        for(const [x,y] of cells){
+          const X0=cx(x,z)+xoff-h,Y0=cy(y,z)-h,X1=cx(x,z)+xoff+h,Y1=cy(y,z)+h;
+          const rect=document.createElementNS(svgNS,'path');
+          rect.setAttribute('d',`M${X0.toFixed(2)},${Y0.toFixed(2)} L${X1.toFixed(2)},${Y0.toFixed(2)} L${X1.toFixed(2)},${Y1.toFixed(2)} L${X0.toFixed(2)},${Y1.toFixed(2)} Z`);
+          rect.setAttribute('fill','none');
+          if(className==='active'){rect.setAttribute('stroke','rgba(57,230,207,.7)');rect.setAttribute('stroke-width','0.8');}
+          else if(className==='ghost'){rect.setAttribute('stroke','rgba(237,244,255,.25)');rect.setAttribute('stroke-width','0.5');rect.setAttribute('stroke-dasharray','2 1');}
+          else{rect.setAttribute('stroke','rgba(255,255,255,.15)');rect.setAttribute('stroke-width','0.5');}
+          svg.append(rect);
+        }
+      }
+      return svg;
+    }
+
+    // Z=0 底層 + Z=1（同 well-shaft mockup）
+    const lockedPieces=[
+      {cells:[[0,0],[1,0],[0,1],[1,1]],z:0,c:'#4c9dff'},
+      {cells:[[2,0],[3,0],[4,0],[4,1]],z:0,c:'#ffcb57'},
+      {cells:[[2,1],[3,1],[2,2],[3,2]],z:0,c:'#50d287'},
+      {cells:[[0,2],[1,2],[0,3],[0,4]],z:0,c:'#ff984c'},
+      {cells:[[4,2],[4,3],[4,4]],z:0,c:'#b776ff'},
+      {cells:[[1,3],[2,3],[3,3]],z:0,c:'#ff667d'},
+      {cells:[[1,4],[2,4],[3,4]],z:0,c:'#39e6cf'},
+      {cells:[[0,3],[1,3],[0,4],[1,4]],z:1,c:'#4c9dff',xOff:2},
+      {cells:[[3,4],[4,4],[4,3],[4,2]],z:1,c:'#ff984c',xOff:-2},
+    ];
+
+    // Active L piece (horizontal): (0,0),(1,0),(2,0),(2,1) at Z=10, anchor (1,1)
+    const activeRel=[[0,0],[1,0],[2,0],[2,1]];
+    const ax=1,ay=1,az=10;
+    const activeCells=activeRel.map(([dx,dy])=>[ax+dx,ay+dy]);
+    // active 的 X/Y footprint：x ∈ [1,3], y ∈ [1,2]（含邊界）
+    const xMin=Math.min(...activeCells.map(c=>c[0]));
+    const xMax=Math.max(...activeCells.map(c=>c[0]))+1;
+    const yMin=Math.min(...activeCells.map(c=>c[1]));
+    const yMax=Math.max(...activeCells.map(c=>c[1]))+1;
+
+    const f=document.getElementById('funnel');
+    const floor=document.getElementById('floor');
+    for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cell';floor.append(c);}
+
+    // ============ 格線 wireframe 井壁（depth-fade + active column highlight） ============
+    const svgNS='http://www.w3.org/2000/svg';
+    const gridSvg=document.createElementNS(svgNS,'svg');
+    gridSvg.setAttribute('class','grid-svg');
+    gridSvg.setAttribute('width','100%');gridSvg.setAttribute('height','100%');
+
+    // 判斷某條牆線是否落在 active column 範圍
+    const inActiveCol=(axis,val)=>{
+      if(axis==='x')return val>=xMin&&val<=xMax;
+      return val>=yMin&&val<=yMax;
+    };
+
+    // 畫一條垂直牆線（從 z=0 到 z=12），分段以套用 depth-fade
+    // 為了 depth-fade，把線分成 12 段（每段一個 z interval），每段用對應 fade 透明度
+    const drawWallLine=(fixedAxis,fixedVal,movingAxis,isMajor,occluded)=>{
+      for(let z=0;z<12;z++){
+        const z0=z,z1=z+1;
+        // 取線在 z0 與 z1 的投影座標
+        let X0,Y0,X1,Y1;
+        if(fixedAxis==='x'){
+          // 北/南壁：固定 y 邊，x=fixedVal
+          X0=cx(fixedVal,z0);Y0=cy(movingAxis,z0);
+          X1=cx(fixedVal,z1);Y1=cy(movingAxis,z1);
+        }else{
+          // 西/東壁：固定 x 邊，y=fixedVal
+          X0=cx(movingAxis,z0);Y0=cy(fixedVal,z0);
+          X1=cx(movingAxis,z1);Y1=cy(fixedVal,z1);
+        }
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1',X0.toFixed(2));line.setAttribute('y1',Y0.toFixed(2));
+        line.setAttribute('x2',X1.toFixed(2));line.setAttribute('y2',Y1.toFixed(2));
+        // depth-fade：用 z0 的 fade 值
+        const baseFade=fade(z0);
+        // active column 亮化：若該線在 active footprint 內，opacity 拉到 ~0.95
+        const activeHit=inActiveCol(fixedAxis,fixedVal);
+        // 被遮蔽壁（南/東）整體壓低
+        const occMul=occluded?0.35:1;
+        // major（角線）稍微加粗
+        const w=isMajor?0.8:0.5;
+        let op;
+        if(activeHit){
+          op=0.55+baseFade*0.45; // active column：0.55~1.0
+        }else{
+          op=baseFade*0.5*occMul; // 一般格線：depth-fade × 0.5 × 遮蔽係數
+        }
+        line.setAttribute('stroke',activeHit?'rgba(127,168,201,'+op.toFixed(3)+')':'rgba(127,168,201,'+op.toFixed(3)+')');
+        line.setAttribute('stroke-width',activeHit?(isMajor?1.1:0.8):w);
+        if(activeHit)line.setAttribute('stroke-linecap','round');
+        gridSvg.append(line);
+      }
+    };
+
+    // 北壁 (y=0)：x=0..5
+    for(let x=0;x<=5;x++)drawWallLine('x',x,0,x===0||x===5,false);
+    // 西壁 (x=0)：y=0..5
+    for(let y=0;y<=5;y++)drawWallLine('y',y,0,y===0||y===5,false);
+    // 南壁 (y=5)：x=0..5（遮蔽）
+    for(let x=0;x<=5;x++)drawWallLine('x',x,5,x===0||x===5,true);
+    // 東壁 (x=5)：y=0..5（遮蔽）
+    for(let y=0;y<=5;y++)drawWallLine('y',y,5,y===0||y===5,true);
+
+    f.append(gridSvg);
+
+    // ============ 落點 footprint glow（井底 active 落點 cell 柔光） ============
+    // 在 z=0 畫 active piece footprint 的外框柔光
+    const footSvg=document.createElementNS(svgNS,'svg');
+    footSvg.setAttribute('class','piece-svg');
+    const footPath=document.createElementNS(svgNS,'path');
+    footPath.setAttribute('d',outlinePath(activeCells,0));
+    footPath.setAttribute('fill','rgba(57,230,207,.08)');
+    footPath.setAttribute('stroke','rgba(57,230,207,.55)');
+    footPath.setAttribute('stroke-width','1.2');
+    footPath.setAttribute('stroke-dasharray','3 2');
+    footSvg.append(footPath);
+    f.append(footSvg);
+
+    // Render locked pieces
+    lockedPieces.forEach(p=>f.append(pieceSVG(p.cells,'locked',p.z,p.c,p.xOff)));
+    // Render ghost at Z=0
+    f.append(pieceSVG(activeCells,'ghost',0));
+    // Render active at Z=10
+    f.append(pieceSVG(activeCells,'active',az));
+  </script>
+</body>
+</html>
