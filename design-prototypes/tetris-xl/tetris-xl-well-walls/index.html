@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris-XL · 井壁三種 mockup · A 實心 / B 格網 / C 角柱</title>
+  <style>
+    :root{
+      --bg:#07090d;
+      --text:#f3f6fa;
+      --muted:#96a1b4;
+      --line:rgba(255,255,255,.1);
+      --cyan:#39e6cf;
+      --rim:#aeb6c8;
+      --rim-soft:rgba(174,182,200,.18);
+      --grid-soft:rgba(143,179,205,.18);
+      --danger:#ff667d;
+      --orange:#ff984c;
+      --base:80px;
+    }
+    *{box-sizing:border-box}
+    html{background:var(--bg);color-scheme:dark}
+    body{margin:0;min-width:320px;color:var(--text);background:radial-gradient(circle at 50% -20%,#253147 0,#0c1118 42%,var(--bg) 76%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(1320px,100%);margin:0 auto;padding:32px clamp(15px,4vw,52px) 46px}
+    header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:25px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+    .eyebrow{margin:0 0 9px;color:var(--cyan);font-size:10px;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+    h1{margin:0;max-width:820px;font-size:clamp(26px,3.4vw,42px);line-height:1.05;letter-spacing:-.045em}
+    .intro{max-width:820px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.65}
+    .camera{min-width:205px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:rgba(13,17,24,.8)}
+    .camera-title{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    .camera-value{display:block;margin-top:5px;font:800 18px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .camera-sub{display:block;margin-top:5px;color:var(--muted);font-size:9px}
+
+    .stage-wrap{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(25,31,43,.98),rgba(10,14,20,.98));box-shadow:0 22px 58px rgba(0,0,0,.25);overflow:hidden}
+    .stage-head{display:flex;align-items:center;gap:14px;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+    .stage-id{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(57,230,207,.38);border-radius:8px;color:var(--cyan);background:rgba(57,230,207,.07);font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .stage-head h2{margin:0;font-size:16px}
+    .stage-head .sub{margin-top:3px;color:var(--muted);font-size:10px}
+    .stage-head .spacer{flex:1}
+    .legend{display:flex;gap:14px;flex-wrap:wrap}
+    .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+    .legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
+
+    .stage{position:relative;height:620px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(41,57,75,.5),rgba(5,8,12,.94) 70%)}
+
+    .funnel{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%) perspective(2400px) rotateX(-5deg);transform-style:preserve-3d}
+
+    .floor{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border:2px solid var(--rim);background:#0a1018;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 0 24px rgba(0,0,0,.6);transform:scale(1);transform-origin:center}
+    .floor .cell{position:relative;border-right:1px solid var(--grid-soft);border-bottom:1px solid var(--grid-soft)}
+    .floor .cell:nth-child(5n){border-right:0}
+    .floor .cell:nth-child(n+21){border-bottom:0}
+
+    .ring{position:absolute;inset:0;border:1px solid var(--rim-soft);pointer-events:none;transform:scale(var(--s));transform-origin:center}
+    .ring.danger{border-color:rgba(255,102,125,.45);border-style:dashed;border-width:1.5px}
+
+    .rim-top{position:absolute;inset:0;border:2.5px solid var(--rim);box-shadow:0 0 28px rgba(174,182,200,.22),inset 0 0 18px rgba(174,182,200,.08);pointer-events:none;transform:scale(8);transform-origin:center}
+    .rim-top::before{content:"井口 · Z=12";position:absolute;left:50%;top:-22px;transform:translateX(-50%);color:var(--rim);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;white-space:nowrap}
+
+    /* 共用：井壁面容器（4 個梯形面） */
+    .wall-face{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%);pointer-events:none}
+    .wall-face i{position:absolute;inset:0}
+
+    /* ============ Option A — 實心半透明深度漸層 ============ */
+    /* 井壁為實心半透明面板，越靠近井底（投影中心）越不透明 */
+    .opt-a .wall-n{clip-path:polygon(25% 25%,75% 25%,800% -700%,-700% -700%);background:linear-gradient(180deg,rgba(86,118,158,.04) 0%,rgba(86,118,158,.22) 55%,rgba(86,118,158,.34) 100%)}
+    .opt-a .wall-s{clip-path:polygon(25% 25%,75% 25%,800% 1700%,-700% 1700%);background:linear-gradient(0deg,rgba(86,118,158,.04) 0%,rgba(86,118,158,.18) 55%,rgba(86,118,158,.28) 100%);opacity:.7}
+    .opt-a .wall-w{clip-path:polygon(25% 25%,25% 75%,-700% 1700%,-700% -700%);background:linear-gradient(90deg,rgba(86,118,158,.04) 0%,rgba(86,118,158,.2) 55%,rgba(86,118,158,.3) 100%)}
+    .opt-a .wall-e{clip-path:polygon(75% 25%,75% 75%,1700% 1700%,1700% -700%);background:linear-gradient(270deg,rgba(86,118,158,.04) 0%,rgba(86,118,158,.2) 55%,rgba(86,118,158,.3) 100%)}
+
+    /* ============ Option B — 格網線框井壁 ============ */
+    /* 井壁極淡，但延伸 5×5 格線垂直向上，幫助讀取 X/Y 對齊 */
+    .opt-b .wall-n{clip-path:polygon(25% 25%,75% 25%,800% -700%,-700% -700%);background:linear-gradient(180deg,rgba(120,150,180,.02),rgba(120,150,180,.06))}
+    .opt-b .wall-s{clip-path:polygon(25% 25%,75% 25%,800% 1700%,-700% 1700%);background:linear-gradient(0deg,rgba(120,150,180,.02),rgba(120,150,180,.06));opacity:.5}
+    .opt-b .wall-w{clip-path:polygon(25% 25%,25% 75%,-700% 1700%,-700% -700%);background:linear-gradient(90deg,rgba(120,150,180,.02),rgba(120,150,180,.05))}
+    .opt-b .wall-e{clip-path:polygon(75% 25%,75% 75%,1700% 1700%,1700% -700%);background:linear-gradient(270deg,rgba(120,150,180,.02),rgba(120,150,180,.05))}
+    /* 格線用 SVG 疊在井壁上（見 script） */
+    .grid-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+    .grid-svg line{stroke:rgba(143,179,205,.22);stroke-width:0.6}
+    .grid-svg line.major{stroke:rgba(174,200,228,.4);stroke-width:0.8}
+
+    /* ============ Option C — 角柱強調 ============ */
+    /* 井壁面極淡，四個垂直角邊強化為亮柱 */
+    .opt-c .wall-n{clip-path:polygon(25% 25%,75% 25%,800% -700%,-700% -700%);background:linear-gradient(180deg,rgba(120,150,180,.02),rgba(120,150,180,.05))}
+    .opt-c .wall-s{clip-path:polygon(25% 25%,75% 25%,800% 1700%,-700% 1700%);background:linear-gradient(0deg,rgba(120,150,180,.02),rgba(120,150,180,.05));opacity:.4}
+    .opt-c .wall-w{clip-path:polygon(25% 25%,25% 75%,-700% 1700%,-700% -700%);background:linear-gradient(90deg,rgba(120,150,180,.02),rgba(120,150,180,.04))}
+    .opt-c .wall-e{clip-path:polygon(75% 25%,75% 75%,1700% 1700%,1700% -700%);background:linear-gradient(270deg,rgba(120,150,180,.02),rgba(120,150,180,.04))}
+    /* 四個角柱：從井底四角延伸到井口四角，亮色漸層 */
+    .pillar-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+    .pillar-svg line{stroke:url(#pillarGrad);stroke-width:1.6;stroke-linecap:round}
+
+    .axis{position:absolute;right:20px;top:60px;bottom:60px;width:70px}
+    .axis-title{position:absolute;right:0;top:-22px;color:#8d9aac;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+    .axis-line{position:absolute;left:16px;top:0;bottom:0;width:1px;background:linear-gradient(var(--danger),rgba(125,169,201,.4) 8%,rgba(125,169,201,.4) 92%,var(--orange))}
+    .tick{position:absolute;left:10px;width:13px;height:1px;background:rgba(171,200,222,.5);transform:translateY(-50%)}
+    .tick.major{width:19px;left:4px;background:rgba(200,220,240,.75)}
+    .tick span{position:absolute;left:20px;top:-5px;color:#768599;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+    .tick.major span{color:#c7d0dc;font-weight:700}
+    .tick.danger span{color:var(--danger)}
+
+    .z-chip{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(57,230,207,.32);border-radius:99px;color:var(--cyan);background:rgba(10,18,22,.82);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+
+    .stage-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px 18px;border-top:1px solid var(--line)}
+    .cue{padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.04)}
+    .cue-label{color:var(--muted);font-size:7px;letter-spacing:.09em;text-transform:uppercase}
+    .cue-value{display:block;margin-top:4px;font-size:10px;font-weight:750}
+
+    .meta{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid rgba(57,230,207,.25);border-radius:14px;background:rgba(57,230,207,.055)}
+    .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
+
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Tetris-XL · Design brief · 井壁三種 mockup</p>
+        <h1>井壁三種變體 · A 實心半透明 / B 格網線框 / C 角柱強調</h1>
+        <p class="intro">基於 -5° 非物理強透視空井道，只變動井壁處理，其餘（相機、scale、深度環、井底 grid、井口 rim）維持 ADR-0008 規範。三種並列方便直接比較視覺重量與空間讀取效果。</p>
+      </div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 1x</span></div>
+    </header>
+
+    <!-- ============ Option A ============ -->
+    <section class="stage-wrap" aria-label="Option A 實心半透明">
+      <div class="stage-head">
+        <span class="stage-id">A</span>
+        <div><h2>實心半透明深度漸層</h2><div class="sub">井壁為半透明面板 · 越近井底越不透明 · 營造實體井道感</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:rgba(86,118,158,.34)"></i>井壁半透明</span>
+          <span><i style="background:var(--rim)"></i>井口 Z=12</span>
+          <span><i style="background:rgba(255,102,125,.5)"></i>警戒 Z=10</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="z-chip">A · SOLID TRANSLUCENT</div>
+        <div class="funnel opt-a" id="funnel-a">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor-a"></div>
+        </div>
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
+        <div class="cue"><span class="cue-label">井壁</span><span class="cue-value">半透明藍灰 · 漸層 4%→34%</span></div>
+        <div class="cue"><span class="cue-label">深度環</span><span class="cue-value">維持原規範</span></div>
+        <div class="cue"><span class="cue-label">視覺重量</span><span class="cue-value">重 · 實體感強</span></div>
+      </div>
+    </section>
+
+    <!-- ============ Option B ============ -->
+    <section class="stage-wrap" aria-label="Option B 格網線框">
+      <div class="stage-head">
+        <span class="stage-id">B</span>
+        <div><h2>格網線框井壁</h2><div class="sub">井壁極淡 · 延伸 5×5 格線垂直向上 · 幫助讀取 X/Y 對齊</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:rgba(143,179,205,.22)"></i>格線 0.6px</span>
+          <span><i style="background:rgba(174,200,228,.4)"></i>主格線 0.8px</span>
+          <span><i style="background:var(--rim)"></i>井口 Z=12</span>
+          <span><i style="background:rgba(255,102,125,.5)"></i>警戒 Z=10</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="z-chip">B · GRID WIREFRAME</div>
+        <div class="funnel opt-b" id="funnel-b">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor-b"></div>
+        </div>
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
+        <div class="cue"><span class="cue-label">井壁</span><span class="cue-value">極淡漸層 2%→6%</span></div>
+        <div class="cue"><span class="cue-label">格線</span><span class="cue-value">5×5 延伸 · 0.6/0.8px</span></div>
+        <div class="cue"><span class="cue-label">視覺重量</span><span class="cue-value">輕 · 技術感 · 易讀位</span></div>
+      </div>
+    </section>
+
+    <!-- ============ Option C ============ -->
+    <section class="stage-wrap" aria-label="Option C 角柱強調">
+      <div class="stage-head">
+        <span class="stage-id">C</span>
+        <div><h2>角柱強調</h2><div class="sub">井壁面極淡 · 四個垂直角邊強化為亮柱 · 建築感</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:linear-gradient(90deg,rgba(174,200,228,.6),rgba(174,200,228,.15))"></i>角柱漸層</span>
+          <span><i style="background:rgba(120,150,180,.05)"></i>井壁極淡</span>
+          <span><i style="background:var(--rim)"></i>井口 Z=12</span>
+          <span><i style="background:rgba(255,102,125,.5)"></i>警戒 Z=10</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="z-chip">C · CORNER PILLARS</div>
+        <div class="funnel opt-c" id="funnel-c">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor-c"></div>
+        </div>
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+        </div>
+      </div>
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">視角</span><span class="cue-value">Z ↓ -5° tilt</span></div>
+        <div class="cue"><span class="cue-label">井壁</span><span class="cue-value">極淡漸層 2%→5%</span></div>
+        <div class="cue"><span class="cue-label">角柱</span><span class="cue-value">4 邊 · 1.6px · 漸層亮柱</span></div>
+        <div class="cue"><span class="cue-label">視覺重量</span><span class="cue-value">中 · 建築感 · 結構清晰</span></div>
+      </div>
+    </section>
+
+    <div class="meta"><strong>這份要確認什麼</strong><span>三種井壁處理的視覺重量與空間讀取效果。A 實心半透明最重、實體感強但可能壓縮方塊辨識度；B 格網線框最輕、技術感、幫助讀位但可能雜亂；C 角柱強調居中、建築感、結構清晰但格線資訊較少。其餘 renderer 規則（相機、scale、深度環、警戒環、井口 rim）維持 ADR-0008 不變。</span></div>
+  </main>
+
+  <script>
+    // 非物理 scale（同 ADR-0008）
+    const s=z=>1+Math.pow(z/12,2)*7;
+    // 投影：cell center 從 grid 中心 (40,40) 向外 scale
+    const cx=(x,z)=>40+((x+0.5)*16-40)*s(z);
+    const cy=(y,z)=>40+((y+0.5)*16-40)*s(z);
+    const half=z=>8*s(z);
+
+    // 建立井底 grid
+    function buildFloor(id){
+      const floor=document.getElementById(id);
+      for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cell';floor.append(c);}
+    }
+    buildFloor('floor-a');buildFloor('floor-b');buildFloor('floor-c');
+
+    // ============ Option B — 格網線框井壁 ============
+    // 在每面井壁上畫垂直格線：從井底 z=0 的 x 或 y 邊界，延伸到井口 z=12
+    // 北壁 (wall-n)：固定 y=0 邊，沿 x=0..5 畫垂直線（投影從 z=0 到 z=12）
+    // 西壁 (wall-w)：固定 x=0 邊，沿 y=0..5 畫垂直線
+    // 南壁、東壁同理（但被井口遮住較多，淡一點）
+    function buildGridWalls(){
+      const svgNS='http://www.w3.org/2000/svg';
+      const funnel=document.getElementById('funnel-b');
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('class','grid-svg');
+      svg.setAttribute('width','100%');svg.setAttribute('height','100%');
+
+      // 每面壁的格線：從 z=0 (floor 邊) 連到 z=12 (rim 邊)
+      // 北壁：y=0 邊界，x = 0..5（6 條線，但 x=0 與 x=5 是角，跟西/東壁共用）
+      // 我們畫 x=0..5 在 y=0 平面上的垂直線（z=0→12）
+      const drawLine=(x,y,z0,z1,major)=>{
+        const X0=cx(x,z0),Y0=cy(y,z0),X1=cx(x,z1),Y1=cy(y,z1);
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1',X0.toFixed(2));line.setAttribute('y1',Y0.toFixed(2));
+        line.setAttribute('x2',X1.toFixed(2));line.setAttribute('y2',Y1.toFixed(2));
+        if(major)line.setAttribute('class','major');
+        svg.append(line);
+      };
+      // 北壁 (y=0)：x=0..5
+      for(let x=0;x<=5;x++)drawLine(x,0,0,12,x===0||x===5);
+      // 南壁 (y=5)：x=0..5（淡，因為被遮）
+      for(let x=0;x<=5;x++){
+        const X0=cx(x,0),Y0=cy(5,0),X1=cx(x,12),Y1=cy(5,12);
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1',X0.toFixed(2));line.setAttribute('y1',Y0.toFixed(2));
+        line.setAttribute('x2',X1.toFixed(2));line.setAttribute('y2',Y1.toFixed(2));
+        line.setAttribute('stroke','rgba(143,179,205,.12)');line.setAttribute('stroke-width','0.5');
+        svg.append(line);
+      }
+      // 西壁 (x=0)：y=0..5
+      for(let y=0;y<=5;y++)drawLine(0,y,0,12,y===0||y===5);
+      // 東壁 (x=5)：y=0..5（淡）
+      for(let y=0;y<=5;y++){
+        const X0=cx(5,0),Y0=cy(y,0),X1=cx(5,12),Y1=cy(y,12);
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1',X0.toFixed(2));line.setAttribute('y1',Y0.toFixed(2));
+        line.setAttribute('x2',X1.toFixed(2));line.setAttribute('y2',Y1.toFixed(2));
+        line.setAttribute('stroke','rgba(143,179,205,.12)');line.setAttribute('stroke-width','0.5');
+        svg.append(line);
+      }
+      funnel.append(svg);
+    }
+    buildGridWalls();
+
+    // ============ Option C — 角柱強調 ============
+    // 四個角柱：從井底四角 (z=0) 連到井口四角 (z=12)
+    function buildPillars(){
+      const svgNS='http://www.w3.org/2000/svg';
+      const funnel=document.getElementById('funnel-c');
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('class','pillar-svg');
+      svg.setAttribute('width','100%');svg.setAttribute('height','100%');
+
+      // 漸層定義：從井底（亮）到井口（淡）
+      const defs=document.createElementNS(svgNS,'defs');
+      const grad=document.createElementNS(svgNS,'linearGradient');
+      grad.setAttribute('id','pillarGrad');
+      grad.setAttribute('x1','0');grad.setAttribute('y1','1');grad.setAttribute('x2','0');grad.setAttribute('y2','0');
+      const stop1=document.createElementNS(svgNS,'stop');
+      stop1.setAttribute('offset','0%');stop1.setAttribute('stop-color','rgba(174,200,228,.7)');
+      const stop2=document.createElementNS(svgNS,'stop');
+      stop2.setAttribute('offset','100%');stop2.setAttribute('stop-color','rgba(174,200,228,.15)');
+      grad.append(stop1,stop2);defs.append(grad);svg.append(defs);
+
+      // 四個角：(0,0),(5,0),(0,5),(5,5)
+      const corners=[[0,0],[5,0],[0,5],[5,5]];
+      for(const [x,y] of corners){
+        const X0=cx(x,0),Y0=cy(y,0),X1=cx(x,12),Y1=cy(y,12);
+        const line=document.createElementNS(svgNS,'line');
+        line.setAttribute('x1',X0.toFixed(2));line.setAttribute('y1',Y0.toFixed(2));
+        line.setAttribute('x2',X1.toFixed(2));line.setAttribute('y2',Y1.toFixed(2));
+        svg.append(line);
+      }
+      funnel.append(svg);
+    }
+    buildPillars();
+  </script>
+</body>
+</html>
