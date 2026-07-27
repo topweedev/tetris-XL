@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris-XL · 投影模型對比 · Model 1 cell-center-fixed vs Model 2 scale-from-center</title>
+  <style>
+    :root{
+      --bg:#07090d;
+      --text:#f3f6fa;
+      --muted:#96a1b4;
+      --line:rgba(255,255,255,.1);
+      --cyan:#39e6cf;
+      --rim:#aeb6c8;
+      --rim-soft:rgba(174,182,200,.18);
+      --grid-soft:rgba(143,179,205,.18);
+      --danger:#ff667d;
+      --orange:#ff984c;
+      --base:80px;
+    }
+    *{box-sizing:border-box}
+    html{background:var(--bg);color-scheme:dark}
+    body{margin:0;min-width:320px;color:var(--text);background:radial-gradient(circle at 50% -20%,#253147 0,#0c1118 42%,var(--bg) 76%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(1320px,100%);margin:0 auto;padding:32px clamp(15px,4vw,52px) 46px}
+    header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:25px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+    .eyebrow{margin:0 0 9px;color:var(--cyan);font-size:10px;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+    h1{margin:0;max-width:820px;font-size:clamp(26px,3.4vw,42px);line-height:1.05;letter-spacing:-.045em}
+    .intro{max-width:820px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.65}
+    .camera{min-width:205px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:rgba(13,17,24,.8)}
+    .camera-title{color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+    .camera-value{display:block;margin-top:5px;font:800 18px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .camera-sub{display:block;margin-top:5px;color:var(--muted);font-size:9px}
+
+    .stage-wrap{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(25,31,43,.98),rgba(10,14,20,.98));box-shadow:0 22px 58px rgba(0,0,0,.25);overflow:hidden}
+    .stage-head{display:flex;align-items:center;gap:14px;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+    .stage-id{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(57,230,207,.38);border-radius:8px;color:var(--cyan);background:rgba(57,230,207,.07);font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .stage-head h2{margin:0;font-size:16px}
+    .stage-head .sub{margin-top:3px;color:var(--muted);font-size:10px}
+    .stage-head .spacer{flex:1}
+    .legend{display:flex;gap:14px;flex-wrap:wrap}
+    .legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+    .legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
+
+    .stage{position:relative;height:680px;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(41,57,75,.5),rgba(5,8,12,.94) 70%)}
+
+    .funnel{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%) perspective(2400px) rotateX(-5deg);transform-style:preserve-3d}
+
+    .floor{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);border:2px solid var(--rim);background:#0a1018;box-shadow:inset 0 0 40px rgba(0,0,0,.8),0 0 24px rgba(0,0,0,.6);transform:scale(1);transform-origin:center}
+    .floor .cell{position:relative;border-right:1px solid var(--grid-soft);border-bottom:1px solid var(--grid-soft)}
+    .floor .cell:nth-child(5n){border-right:0}
+    .floor .cell:nth-child(n+21){border-bottom:0}
+
+    .ring{position:absolute;inset:0;border:1px solid var(--rim-soft);pointer-events:none;transform:scale(var(--s));transform-origin:center}
+    .ring.danger{border-color:rgba(255,102,125,.45);border-style:dashed;border-width:1.5px}
+
+    .rim-top{position:absolute;inset:0;border:2.5px solid var(--rim);box-shadow:0 0 28px rgba(174,182,200,.22),inset 0 0 18px rgba(174,182,200,.08);pointer-events:none;transform:scale(8);transform-origin:center}
+    .rim-top::before{content:"井口 · Z=12";position:absolute;left:50%;top:-22px;transform:translateX(-50%);color:var(--rim);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;white-space:nowrap}
+
+    .wall-face{position:absolute;left:50%;top:50%;width:var(--base);height:var(--base);transform:translate(-50%,-50%);pointer-events:none}
+    .wall-face i{position:absolute;inset:0}
+    .wall-n{clip-path:polygon(25% 25%,75% 25%,800% -700%,-700% -700%);background:linear-gradient(180deg,rgba(120,150,180,.015),rgba(120,150,180,.04))}
+    .wall-s{clip-path:polygon(25% 25%,75% 25%,800% 1700%,-700% 1700%);background:linear-gradient(0deg,rgba(120,150,180,.015),rgba(120,150,180,.03));opacity:.4}
+    .wall-w{clip-path:polygon(25% 25%,25% 75%,-700% 1700%,-700% -700%);background:linear-gradient(90deg,rgba(120,150,180,.015),rgba(120,150,180,.04))}
+    .wall-e{clip-path:polygon(75% 25%,75% 75%,1700% 1700%,1700% -700%);background:linear-gradient(270deg,rgba(120,150,180,.015),rgba(120,150,180,.03));opacity:.4}
+
+    .piece-svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+    .piece-svg.active path{fill:transparent;stroke:var(--cyan);stroke-width:1;stroke-linejoin:miter}
+    .piece-svg.ghost path{fill:rgba(237,244,255,.05);stroke:rgba(237,244,255,.85);stroke-width:1.5;stroke-dasharray:4 2;stroke-linejoin:miter}
+    .piece-svg.locked path{fill:var(--c);stroke:rgba(255,255,255,.3);stroke-width:0.5;stroke-linejoin:miter}
+    /* Z=1 pieces use slightly different stroke to distinguish from Z=0 */
+    .piece-svg.locked-z1 path{fill:var(--c);stroke:rgba(255,255,255,.5);stroke-width:0.7;stroke-linejoin:miter;opacity:.92}
+
+    .axis{position:absolute;right:20px;top:60px;bottom:60px;width:70px}
+    .axis-title{position:absolute;right:0;top:-22px;color:#8d9aac;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+    .axis-line{position:absolute;left:16px;top:0;bottom:0;width:1px;background:linear-gradient(var(--danger),rgba(125,169,201,.4) 8%,rgba(125,169,201,.4) 92%,var(--orange))}
+    .tick{position:absolute;left:10px;width:13px;height:1px;background:rgba(171,200,222,.5);transform:translateY(-50%)}
+    .tick.major{width:19px;left:4px;background:rgba(200,220,240,.75)}
+    .tick span{position:absolute;left:20px;top:-5px;color:#768599;font:7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+    .tick.major span{color:#c7d0dc;font-weight:700}
+    .tick.danger span{color:var(--danger)}
+    .marker{position:absolute;left:8px;width:15px;height:15px;transform:translateY(-50%);border-radius:50%;background:var(--cyan);box-shadow:0 0 10px rgba(57,230,207,.5);border:2px solid #0a1018}
+    .marker::after{content:attr(data-label);position:absolute;left:22px;top:0;color:var(--cyan);font:800 7px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+
+    .note{position:absolute;display:flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(6,9,13,.85);backdrop-filter:blur(4px);color:#c7d0dc;font:8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+    .note::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor}
+    .note-good{left:24px;top:22px;color:#50d287}
+    .note-bad{left:24px;top:22px;color:var(--danger)}
+    .note-z1{left:24px;top:60px;color:var(--orange)}
+    .note-active{left:24px;bottom:22px;color:var(--cyan)}
+
+    .z-chip{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(57,230,207,.32);border-radius:99px;color:var(--cyan);background:rgba(10,18,22,.82);font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+
+    .stage-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px 18px;border-top:1px solid var(--line)}
+    .cue{padding:10px 11px;border-radius:9px;background:rgba(255,255,255,.04)}
+    .cue-label{color:var(--muted);font-size:7px;letter-spacing:.09em;text-transform:uppercase}
+    .cue-value{display:block;margin-top:4px;font-size:10px;font-weight:750}
+
+    .meta{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid rgba(57,230,207,.25);border-radius:14px;background:rgba(57,230,207,.055)}
+    .meta strong{color:var(--cyan);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .meta span{color:#cbd4df;font-size:11px;line-height:1.55}
+    .meta.bad{border-color:rgba(255,102,125,.25);background:rgba(255,102,125,.05)}
+    .meta.bad strong{color:var(--danger)}
+
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Tetris-XL · Design brief · 投影模型對比</p>
+        <h1>投影模型對比 · Model 1 cell-center-fixed vs Model 2 scale-from-center</h1>
+        <p class="intro">回答「正式 render 時方塊會不會一樣錯位」的問題。兩個模型並排，同樣的方塊佈局（Z=0 底層 + Z=1 兩個 piece + Z=10 active L），移除 xOff fudge，只看純投影效果。Model 1：cell center 固定，只有 size 隨 z 變大。Model 2（目前）：cell center 從 grid 中心向外 scale。</p>
+      </div>
+      <div class="camera"><span class="camera-title">Camera direction</span><span class="camera-value">Z ↓ · -5° tilt</span><span class="camera-sub">非物理 scale · 井口 8x / 井底 1x</span></div>
+    </header>
+
+    <!-- ============ Model 2 (current) ============ -->
+    <section class="stage-wrap" aria-label="Model 2 scale from center">
+      <div class="stage-head">
+        <span class="stage-id">M2</span>
+        <div><h2>Model 2 · scale from grid center（目前 ADR-0008）</h2><div class="sub">cell center = 40 + (pos - 40) × s(z) · 越高 z 越遠離中心 · 井口 8x 擴張正確</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:var(--orange)"></i>Z=0 locked</span>
+          <span><i style="background:rgba(76,157,255,.9)"></i>Z=1 locked</span>
+          <span><i style="border:1px solid var(--cyan);background:transparent"></i>Z=10 active</span>
+          <span><i style="border:1px dashed rgba(237,244,255,.6);background:transparent"></i>Ghost Z=0</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="z-chip">M2 · SCALE FROM CENTER · 井口擴張正確</div>
+        <div class="funnel" id="funnel-m2">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor-m2"></div>
+        </div>
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+          <i class="marker" data-label="Z10" style="top:16.66%"></i>
+        </div>
+        <span class="note note-good">✓ 井口 8x 擴張正確 · 深度透視自然</span>
+        <span class="note note-z1">Z=1 邊緣 cell 偏移 ~1.5px · 中心 cell 對齊</span>
+        <span class="note note-active">Z=10 active 正確放大 5.86x · 偏移至定位</span>
+      </div>
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">投影</span><span class="cue-value">center = 40 + (pos-40)×s(z)</span></div>
+        <div class="cue"><span class="cue-label">Z=1 偏移</span><span class="cue-value">邊緣 ~1.5px · 中心 0px</span></div>
+        <div class="cue"><span class="cue-label">Z=10 偏移</span><span class="cue-value">邊緣 ~155px · 中心 0px</span></div>
+        <div class="cue"><span class="cue-label">井口</span><span class="cue-value">8x 擴張 ✓ 正確</span></div>
+      </div>
+    </section>
+
+    <div class="meta"><strong>Model 2 分析</strong><span>Z=1 邊緣 cell 偏移 ~1.5px（中心 cell 完全對齊）。這是透視效果，非 bug。在 3D render 中，-5° tilt 會讓 Z=1 block 露出極薄的側面，加上深度環輔助，大腦會讀成「深度」而非「錯位」。Z=10 active 正確放大到 5.86x 並偏移到井口位置——這就是井道透視的核心。移除 xOff fudge 後，Z=1 偏移只剩 ~1.5px，非常細微。</span></div>
+
+    <!-- ============ Model 1 (alternative) ============ -->
+    <section class="stage-wrap" aria-label="Model 1 cell center fixed">
+      <div class="stage-head">
+        <span class="stage-id">M1</span>
+        <div><h2>Model 1 · cell center fixed（替代方案）</h2><div class="sub">cell center = (x+0.5)×16 固定 · 只有 size 隨 z 變大 · Z 層完全對齊但高 Z 重疊</div></div>
+        <div class="spacer"></div>
+        <div class="legend">
+          <span><i style="background:var(--orange)"></i>Z=0 locked</span>
+          <span><i style="background:rgba(76,157,255,.9)"></i>Z=1 locked</span>
+          <span><i style="border:1px solid var(--cyan);background:transparent"></i>Z=10 active</span>
+          <span><i style="border:1px dashed rgba(237,244,255,.6);background:transparent"></i>Ghost Z=0</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="z-chip">M1 · CELL CENTER FIXED · Z 層對齊但高 Z 重疊</div>
+        <div class="funnel" id="funnel-m1">
+          <div class="wall-face"><i class="wall-n"></i><i class="wall-s"></i><i class="wall-w"></i><i class="wall-e"></i></div>
+          <i class="ring" style="--s:1.05"></i><i class="ring" style="--s:1.19"></i><i class="ring" style="--s:1.44"></i><i class="ring" style="--s:1.78"></i><i class="ring" style="--s:2.22"></i><i class="ring" style="--s:2.75"></i><i class="ring" style="--s:3.39"></i><i class="ring" style="--s:4.11"></i><i class="ring" style="--s:4.94"></i><i class="ring danger" style="--s:5.86"></i><i class="ring" style="--s:6.88"></i>
+          <i class="rim-top"></i>
+          <div class="floor" id="floor-m1"></div>
+        </div>
+        <div class="axis">
+          <span class="axis-title">Z DEPTH</span>
+          <i class="axis-line"></i>
+          <i class="tick major" style="top:0%"><span>12</span></i>
+          <i class="tick" style="top:8.33%"><span>11</span></i>
+          <i class="tick danger" style="top:16.66%"><span>10</span></i>
+          <i class="tick" style="top:25%"><span>9</span></i>
+          <i class="tick" style="top:33.33%"><span>8</span></i>
+          <i class="tick" style="top:41.66%"><span>7</span></i>
+          <i class="tick" style="top:50%"><span>6</span></i>
+          <i class="tick" style="top:58.33%"><span>5</span></i>
+          <i class="tick" style="top:66.66%"><span>4</span></i>
+          <i class="tick" style="top:75%"><span>3</span></i>
+          <i class="tick" style="top:83.33%"><span>2</span></i>
+          <i class="tick" style="top:91.66%"><span>1</span></i>
+          <i class="tick major" style="top:100%"><span>0</span></i>
+          <i class="marker" data-label="Z10" style="top:16.66%"></i>
+        </div>
+        <span class="note note-good">✓ Z=1 完全對齊 Z=0 · 無偏移</span>
+        <span class="note note-bad">✗ Z=10 active 5.86x 但中心不動 · 與鄰格重疊 77px</span>
+        <span class="note note-active">✗ 井口無擴張 · 高 Z 方塊互相覆蓋</span>
+      </div>
+      <div class="stage-foot">
+        <div class="cue"><span class="cue-label">投影</span><span class="cue-value">center = (x+0.5)×16 固定</span></div>
+        <div class="cue"><span class="cue-label">Z=1 偏移</span><span class="cue-value">0px · 完全對齊 ✓</span></div>
+        <div class="cue"><span class="cue-label">Z=10 偏移</span><span class="cue-value">0px · 但鄰格重疊 77px ✗</span></div>
+        <div class="cue"><span class="cue-label">井口</span><span class="cue-value">無擴張 ✗ 透視失效</span></div>
+      </div>
+    </section>
+
+    <div class="meta bad"><strong>Model 1 分析</strong><span>Z 層完全對齊（無偏移），但代價是高 Z 方塊只在原地變大、不擴張。Z=10 時相鄰 cell 重疊 77px，Z=12 時更嚴重。井口不會呈現 8x 擴張的井道透視——整個 well-shaft 視覺語言失效。這就是為什麼 commit de77c24 之後改用 Model 2。</span></div>
+
+  </main>
+
+  <script>
+    const svgNS='http://www.w3.org/2000/svg';
+    const s=z=>1+Math.pow(z/12,2)*7;
+
+    // Model 2: scale cell center from grid center (40,40)
+    const cx2=(x,z)=>40+((x+0.5)*16-40)*s(z);
+    const cy2=(y,z)=>40+((y+0.5)*16-40)*s(z)-z*1;
+    const half2=z=>8*s(z);
+
+    // Model 1: cell center fixed, only size grows
+    const cx1=(x,z)=>(x+0.5)*16;
+    const cy1=(y,z)=>(y+0.5)*16-z*1;
+    const half1=z=>8*s(z);
+
+    function outlinePath(cells,z,cx,cy,half){
+      const set=new Set(cells.map(([x,y])=>`${x},${y}`));
+      const edgeMap=new Map();
+      const h=half;
+      for(const [x,y] of cells){
+        const X0=cx(x,z)-h,Y0=cy(y,z)-h,X1=cx(x,z)+h,Y1=cy(y,z)+h;
+        const candidates=[[X0,Y0,X1,Y0],[X1,Y0,X1,Y1],[X1,Y1,X0,Y1],[X0,Y1,X0,Y0]];
+        for(const e of candidates){
+          const key=e.map(v=>v.toFixed(2)).join(',');
+          const rev=[e[2],e[3],e[0],e[1]].map(v=>v.toFixed(2)).join(',');
+          if(edgeMap.has(rev)){edgeMap.delete(rev);}
+          else{edgeMap.set(key,e);}
+        }
+      }
+      const edges=[...edgeMap.values()];
+      const sorted=[edges.shift()];
+      while(edges.length){
+        const last=sorted[sorted.length-1];
+        const idx=edges.findIndex(e=>(Math.abs(e[0]-last[2])<0.01&&Math.abs(e[1]-last[3])<0.01)||(Math.abs(e[2]-last[2])<0.01&&Math.abs(e[3]-last[3])<0.01));
+        if(idx<0)break;
+        let e=edges.splice(idx,1)[0];
+        if(Math.abs(e[2]-last[2])<0.01&&Math.abs(e[3]-last[3])<0.01)e=[e[2],e[3],e[0],e[1]];
+        sorted.push(e);
+      }
+      let d=`M${sorted[0][0].toFixed(2)},${sorted[0][1].toFixed(2)}`;
+      for(const e of sorted)d+=` L${e[2].toFixed(2)},${e[3].toFixed(2)}`;
+      return d+' Z';
+    }
+
+    function pieceSVG(cells,className,z,fillColor,cx,cy,half){
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('class',`piece-svg ${className}`);
+      if(fillColor)svg.style.setProperty('--c',fillColor);
+      const path=document.createElementNS(svgNS,'path');
+      path.setAttribute('d',outlinePath(cells,z,cx,cy,half));
+      svg.append(path);
+      // cell grid lines
+      const h=half(z);
+      for(const [x,y] of cells){
+        const X0=cx(x,z)-h,Y0=cy(y,z)-h,X1=cx(x,z)+h,Y1=cy(y,z)+h;
+        const rect=document.createElementNS(svgNS,'path');
+        rect.setAttribute('d',`M${X0.toFixed(2)},${Y0.toFixed(2)} L${X1.toFixed(2)},${Y0.toFixed(2)} L${X1.toFixed(2)},${Y1.toFixed(2)} L${X0.toFixed(2)},${Y1.toFixed(2)} Z`);
+        rect.setAttribute('fill','none');
+        if(className==='active'){rect.setAttribute('stroke','rgba(57,230,207,.7)');rect.setAttribute('stroke-width','0.8');}
+        else if(className==='ghost'){rect.setAttribute('stroke','rgba(237,244,255,.25)');rect.setAttribute('stroke-width','0.5');rect.setAttribute('stroke-dasharray','2 1');}
+        else{rect.setAttribute('stroke','rgba(255,255,255,.15)');rect.setAttribute('stroke-width','0.5');}
+        svg.append(rect);
+      }
+      return svg;
+    }
+
+    // Same blocks for both models — NO xOff fudge
+    const lockedZ0=[
+      {cells:[[0,0],[1,0],[0,1],[1,1]],c:'#4c9dff'},   // O4 blue
+      {cells:[[2,0],[3,0],[4,0],[4,1]],c:'#ffcb57'},   // L4 yellow
+      {cells:[[2,1],[3,1],[2,2],[3,2]],c:'#50d287'},   // O4 green
+      {cells:[[0,2],[1,2],[0,3],[0,4]],c:'#ff984c'},   // L4 orange
+      {cells:[[4,2],[4,3],[4,4]],c:'#b776ff'},         // I3 purple
+      {cells:[[1,3],[2,3],[3,3]],c:'#ff667d'},         // I3 red
+      {cells:[[1,4],[2,4],[3,4]],c:'#39e6cf'},         // I3 cyan
+    ];
+    // Z=1 pieces — same cells as Z=0 neighbors, NO xOff
+    const lockedZ1=[
+      {cells:[[0,3],[1,3],[0,4],[1,4]],c:'#4c9dff'},   // O4 blue on top of orange L area
+      {cells:[[3,4],[4,4],[4,3],[4,2]],c:'#ff984c'},   // L4 orange
+    ];
+
+    // Active L piece at Z=10
+    const activeRel=[[0,0],[1,0],[2,0],[2,1]];
+    const ax=1,ay=1,az=10;
+    const activeCells=activeRel.map(([dx,dy])=>[ax+dx,ay+dy]);
+
+    function renderModel(funnelId,floorId,cx,cy,half){
+      const f=document.getElementById(funnelId);
+      const floor=document.getElementById(floorId);
+      for(let i=0;i<25;i++){const c=document.createElement('div');c.className='cell';floor.append(c);}
+      // Z=0 locked
+      lockedZ0.forEach(p=>f.append(pieceSVG(p.cells,'locked',0,p.c,cx,cy,half)));
+      // Z=1 locked (different class for visual distinction)
+      lockedZ1.forEach(p=>f.append(pieceSVG(p.cells,'locked-z1',1,p.c,cx,cy,half)));
+      // Ghost at Z=0
+      f.append(pieceSVG(activeCells,'ghost',0,null,cx,cy,half));
+      // Active at Z=10
+      f.append(pieceSVG(activeCells,'active',az,null,cx,cy,half));
+    }
+
+    renderModel('funnel-m2','floor-m2',cx2,cy2,half2);
+    renderModel('funnel-m1','floor-m1',cx1,cy1,half1);
+  </script>
+</body>
+</html>
