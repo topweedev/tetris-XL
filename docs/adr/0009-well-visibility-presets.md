@@ -10,9 +10,9 @@ tags: [adr, tetris-xl, renderer, visual, three-js, well-shaft, presets, a11y]
 
 # ADR-0009: Well Visibility Presets & Depth-Fade Wall Treatment（井壁可視性 presets 與近端深度淡化）
 
-- 狀態：Proposed（rev.2 — 收斂 LA4 r1 + LA6 r1 + LA7 r1 findings；待 r2 mini-sanity + 人類 accept）
+- 狀態：Proposed（rev.2.1 — 收斂 LA4 r1 + LA6 r1 (including late addendum) + LA7 r1 findings；待 r2 mini-sanity + 人類 accept）
 - 日期：2026-07-27
-- 決策者：LA1 起草；LA4 (correctness) r1 NEEDS_CHANGES 0B/1S/5N + verified_clean × 10、LA6 (perf/forward) r1 BLOCKED 1B/3S/1N、LA7 (a11y/security) r1 PASS 0B/6S/2N → rev.2 收斂 blocker + shoulds + nits，待 r2 mini-sanity 確認
+- 決策者：LA1 起草；LA4 (correctness) r1 NEEDS_CHANGES 0B/1S/5N + verified_clean × 10、LA6 (perf/forward) r1 BLOCKED **2B/3S/2N**（late addendum 2 送）、LA7 (a11y/security) r1 PASS 0B/6S/2N → rev.2.1 收斂 blockers + shoulds + nits，待 r2 mini-sanity 確認
 - 相關文件：
   - ADR-0001 §2.5（renderOrder 分層、單一 `InstancedMesh`、alt-mode 相機家族）
   - **ADR-0008 §2.2.4**（井壁「暫定」— 本 ADR 為其**閉合 amend 對象**，見 §2.4 delta）
@@ -67,15 +67,18 @@ LA8 的 A/B/C 井壁處理與 §3.7 三種 preset **正交但可對齊**：井�
 
 ### 2.2 井壁 rendering — 採用 LA8 Option C（近端深度淡化）為 default
 
-井壁使用 **camera-space Z 距離驅動的 alpha decay**：
+井壁使用 **camera-space Z 距離驅動的 alpha decay**（rev.2.1 — LA6 B7 fix：改用 wall 近點 `zWallNear` 為錨點）：
 
 ```text
-wallAlpha(zCam) = smoothstep(FADE_NEAR, FADE_FAR, |zCam|) × BASE_WALL_ALPHA
+zWallNear = min(|zCam(vertex)|) over all wall vertices  // per-wall, computed at setup / on camera change
+wallAlpha(zCam) = smoothstep(FADE_NEAR_OFFSET, FADE_FAR_OFFSET, |zCam| - zWallNear) × BASE_WALL_ALPHA
 ```
 
 - **BASE_WALL_ALPHA**：`0.28`（tunable，見 §2.4）— 井壁遠端最大不透明度
-- **FADE_NEAR**：`camera.near + 0.5` world units — 淡化起點（越靠近相機越淡）
-- **FADE_FAR**：`camera.near + 2.5` world units — 淡化終點（超過此距離為 BASE_WALL_ALPHA）
+- **FADE_NEAR_OFFSET**：`0.5` world units — 距 `zWallNear` 之淡化起點
+- **FADE_FAR_OFFSET**：`2.5` world units — 距 `zWallNear` 之淡化終點（超過此距離為 BASE_WALL_ALPHA）
+- **`zWallNear` 計算時機**：wall setup 時計算並 cache；相機切換（default 20° ↔ alt near-vertical family）或 tilt 家族變更時 **re-bake**；同一相機下 vertex 位置固定，per-frame 不需更新
+- **為何 rev.2.1 改變**：LA6 B7 指出 rev.2 原用 `camera.near`（即 near clipping plane，e.g. `0.1`）為 anchor 是**錯的**；若 wall 之 `|zCam|` 全部 > `camera.near + FADE_FAR = 2.6`（例如 wall 距相機 5），整面 wall 之 `smoothstep` 恆為 `1`，alpha 恆為 `BASE_WALL_ALPHA` → **完全無淡化效果**（rev.2 原意失效）。改以 `zWallNear` 為 anchor 後，fade band `[+0.5, +2.5]` 為相對 wall 近點的世界單位偏移，orthographic / perspective 相機皆成立
 - 井口 rim（`z = board.depth`，即 z=12 一圈頂邊）**不套用 fade**；rim 保持 `1.0` alpha 作為井道邊界穩定錨點
 - Floor（`z = 0`）不繪井壁，只保留 board floor material（見 ADR-0008 §2.2.3）
 - Depth ring（z=1..11 + rim）不受本規則影響；ring 使用 ADR-0008 §2.2.3 既有規則
@@ -85,7 +88,7 @@ wallAlpha(zCam) = smoothstep(FADE_NEAR, FADE_FAR, |zCam|) × BASE_WALL_ALPHA
 - **Wall 幾何**：4 面 `PlaneGeometry(WIDTH, HEIGHT, 1, DEPTH_SEGMENTS)`（後 / 左 / 右 / 前），其中：
   - `WIDTH` / `HEIGHT` 對齊 board XY / Z 世界座標（見 ADR-0008 §2.2.2）
   - **`DEPTH_SEGMENTS = 12`**（與 board Z depth + depth ring 分布對齊；每 segment = 一 z-cell 高度）
-  - **理由**：`smoothstep(FADE_NEAR, FADE_FAR, |zCam|)` 為 S-curve，若 wall 只有 default 1×1 segments（4 vertex），linear vertex interpolation **無法** encode S-curve → 退化為 corner 值 linear ramp + low-vertex-density banding（LA6 B1）
+  - **理由**：`smoothstep(FADE_NEAR_OFFSET, FADE_FAR_OFFSET, |zCam| - zWallNear)` 為 S-curve，若 wall 只有 default 1×1 segments（4 vertex），linear vertex interpolation **無法** encode S-curve → 退化為 corner 值 linear ramp + low-vertex-density banding（LA6 B1）
   - 12 段對 smoothstep 之 RMS 誤差 < 2%；未來若需更平滑可提升至 24（進 M11 rev.N）
 - **Vertex 序**：four wall meshes 各自為 `PlaneGeometry`，vertex 順序沿 three.js `PlaneGeometry` 慣例（左下→右下→左上→右上，逐 row scan）；per-vertex world Z 由 vertex position 直接推導、bake 進 vertex color 之 alpha channel
 - **Vertex color attribute**：`Float32BufferAttribute(colors, 4)` — **`itemSize = 4`**（RGBA），非 default 3（RGB）；three.js r160+ 內建 `MeshBasicMaterial` / `MeshStandardMaterial` 於 `vertexColors: true` + `transparent: true` + `itemSize=4` 時自動走 `USE_COLOR_ALPHA` 路徑（LA6 verified）
@@ -196,8 +199,8 @@ WebGL context restore 路徑（§4.3）：context restore 後由 renderer 主動
 |---------|---------|------|
 | `BASE_WALL_ALPHA` (translucent, opaque-fallback) | `0.28` | 井壁遠端最大不透明度 |
 | `BASE_WALL_ALPHA` (high-contrast) | `0.15` | 更透明以配合 active fill 提升 |
-| `FADE_NEAR` (world units) | `camera.near + 0.5` | 淡化起點 |
-| `FADE_FAR` (world units) | `camera.near + 2.5` | 淡化終點 |
+| `FADE_NEAR_OFFSET` (world units) | `0.5` | 距 `zWallNear` 之淡化起點（rev.2.1 — LA6 B7 fix） |
+| `FADE_FAR_OFFSET` (world units) | `2.5` | 距 `zWallNear` 之淡化終點（rev.2.1 — LA6 B7 fix） |
 | `HIGH_CONTRAST_CUTAWAY` | `false` | `high-contrast` 是否啟用前壁裁切 |
 
 MVP M4 使用預設值；tuning 進 M11 rev.N。
@@ -348,7 +351,7 @@ MVP M4 使用預設值；tuning 進 M11 rev.N。
 
 - **BASE_WALL_ALPHA = 0.28 / 0.15 未經 dogfood 校準**：M4 P4.2 dogfood 需記錄，若堆疊井底辨識 < 90%（`piece-visual-rendering-brief` §5.2 criteria），M11 rev.2 tune
 - **前壁裁切 UX 感受不明**：`HIGH_CONTRAST_CUTAWAY=true` 於 M4 dogfood 為 opt-in 測試；至少 2 位測試者體驗後回饋
-- **~~camera-space Z 於 orthographic camera 之語意~~**（**rev.2 CLOSED — LA6 r1 已審**）：LA6 review 於 `oab/pr/25-review-la6` 明確以 orthographic near/far plane 為 `FADE_NEAR`/`FADE_FAR` 基準之語意成立；`smoothstep` 之 vertex interpolation 已由 `DEPTH_SEGMENTS=12` 補足（§2.2），不再列為未決
+- **~~camera-space Z 於 orthographic camera 之語意~~**（**rev.2.1 CLOSED — LA6 B7 二送 addendum + zWallNear anchor fix**）：LA6 於 r1 二送 addendum（Discord 2026-07-27 23:19 CST，brain 未更新）指出 rev.2 原用 `camera.near` 為 anchor 於 orthographic 下**恆等於 no-fade**（wall `|zCam|` 通常 > `camera.near + FADE_FAR`）；rev.2.1 §2.2 已改用 `zWallNear` 為 anchor（`smoothstep(0.5, 2.5, |zCam| - zWallNear)`），orthographic / perspective 相機皆數值上成立。`zWallNear` 於 wall setup 時計算並 cache，相機切換 re-bake
 - **~~`translucent` preset 於 alpha=0.28 之井底暗色 wash~~**（**rev.2 CLARIFIED**）：WCAG 對比檢查（§2.5 / §4.2）已針對 alpha-composited 最終畫素做 hard gate（LA7 S1）；本項不再獨立列，併入 §4.2
 - **低階 integrated GPU fill-rate**（rev.2 — LA6 S1 residual）：MVP 於 2 Gpix/s iGPU 之 4–5% budget 使用率為已知風險；§4.3 之 hard gate + auto-fallback 為 mitigation，M4 dogfood 需於至少一台 iGPU 硬體驗證
 - **`DEPTH_SEGMENTS=12` banding 於高 DPR**（rev.2 — LA6 B1 residual）：12 段對 smoothstep 之 RMS 誤差 <2%，M4 於 DPR ∈ {1, 1.5, 2, 3} × 4 viewport 需驗證無可見 banding；若可見 → M11 rev.N 提升至 24（§2.2）
@@ -365,7 +368,12 @@ MVP M4 使用預設值；tuning 進 M11 rev.N。
 
 ## 6. 修訂紀錄 (Revision History)
 
-- **rev.2**（2026-07-27 22:xx CST）— LA1 收斂 LA4/LA6/LA7 round 1 review findings（合併 1B / 8S / 8N，去重 3 對交叉）：
+- **rev.2.1**（2026-07-27 23:35 CST）— LA1 收斂 LA6 r1 **二送 addendum**（Discord 訊息 IDs `1531320108079644798` + `1531320110457946166`，brain `oab/pr/25-review-la6` 未同步更新；LA6 r1 final findings 為 2B/3S/2N，非 brain 之 1B/3S/1N）：
+  - **B7 (LA6 late addendum)** — §2.2 / §2.4 / §4.5 `FADE_NEAR/FAR = camera.near ± X` 於 orthographic 下**恆等於 no-fade**（wall `|zCam|` 通常 > `camera.near + 2.5`，`smoothstep` 恆 = 1）。改用 `zWallNear = min(|zCam(vertex)|)` 為 anchor：`smoothstep(FADE_NEAR_OFFSET=0.5, FADE_FAR_OFFSET=2.5, |zCam| - zWallNear)`；wall setup 時計算 cache、相機切換 re-bake
+  - Tunable 常數更名：`FADE_NEAR` → `FADE_NEAR_OFFSET`（0.5），`FADE_FAR` → `FADE_FAR_OFFSET`（2.5）
+  - §4.5 之「rev.2 CLOSED」誤述修正為「rev.2.1 CLOSED via zWallNear anchor」
+  - **N6 (LA6 late addendum)** — 併入 §2.4 tunable baseline 註記（0.28/0.15 為初值，M4 WCAG 對比驗證為 gate；0.5/2.5 已改以 zWallNear 為錨點）
+- **rev.2**（2026-07-27 23:26 CST）— LA1 收斂 LA4/LA6/LA7 round 1 review findings（合併 1B / 8S / 8N，去重 3 對交叉；**注意**：LA6 r1 二送 addendum 之 B7/N6 於此 rev 未處理，rev.2.1 補）：
   - **B1 (LA6)** — §2.2 補明 `DEPTH_SEGMENTS=12` + `itemSize=4` color buffer + in-place BufferAttribute lifecycle；`smoothstep` 於 vertex interpolation 之低段密度失效已 close
   - **S1 (LA4) + N1 (LA7)** — §2.3.1 active fill `0.35` phantom → **`0.58`**（`piece-visual-rendering-brief` §3.1 首輪 playtest baseline）；citation 改引 §3.1
   - **S1 (LA6)** — §4.3 補 M4 fill-rate hard gate（>0.3 ms 或 >2% budget 自動 fallback）+ 明列 wall/locked/active/ghost `depthWrite` 政策
