@@ -1,7 +1,7 @@
 ---
 title: ADR-0009 Well Visibility Presets & Depth-Fade Wall Treatment
 type: decision
-status: proposed
+status: accepted
 adr_id: "0009"
 repo: topweedev/tetris-XL
 path: docs/adr/0009-well-visibility-presets.md
@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, renderer, visual, three-js, well-shaft, presets, a11y]
 
 # ADR-0009: Well Visibility Presets & Depth-Fade Wall Treatment（井壁可視性 presets 與近端深度淡化）
 
-- 狀態：Proposed（rev.2.1 — 收斂 LA4 r1 + LA6 r1 (including late addendum) + LA7 r1 findings；待 r2 mini-sanity + 人類 accept）
+- 狀態：Accepted（2026-07-28 08:02:46 CST；PR #25 squash-merge `424383f`；rev.2.1 三 reviewer r2 全 PASS：LA4 0/0/0、LA6 0B/0S/1N、LA7 0/0/0）
 - 日期：2026-07-27
 - 決策者：LA1 起草；LA4 (correctness) r1 NEEDS_CHANGES 0B/1S/5N + verified_clean × 10、LA6 (perf/forward) r1 BLOCKED **2B/3S/2N**（late addendum 2 送）、LA7 (a11y/security) r1 PASS 0B/6S/2N → rev.2.1 收斂 blockers + shoulds + nits，待 r2 mini-sanity 確認
 - 相關文件：
@@ -367,6 +367,8 @@ MVP M4 使用預設值；tuning 進 M11 rev.N。
 - **CVD automated check tooling**：LA3 e2e 於 M4 P4.1 review 時提供 CVD simulation lib 選型（Machado 2009 matrix 或既有 npm 套件）
 
 ## 6. 修訂紀錄 (Revision History)
+
+- **rev.2.1 Accepted**（2026-07-28 08:02:46 CST，post-merge status sync）— PR #25 squash-merge `424383f` 後為 ADR-0009 frontmatter + body header + §6 補 accepted 標記。r2 mini-sanity 結果：LA4 r2 @ 1c487ad PASS 0/0/0（brain `oab/pr/25-review-la4-r2`）；LA6 r2 @ 4f5c6c4 PASS 0B/0S/1N（brain `oab/pr/25-review-la6-r2`）；LA7 r2 @ 4f5c6c4 PASS 0/0/0（brain `oab/pr/25-review-la7-r2`）。無新內容變更；此 amend 純為 status transition + ADR-0008 rev.5 sync（另 PR）補正 LA4 mini-sanity S1 (status field stale) + N1 (§2.2 vs §2.3 pointer)。
 
 - **rev.2.1**（2026-07-27 23:35 CST）— LA1 收斂 LA6 r1 **二送 addendum**（Discord 訊息 IDs `1531320108079644798` + `1531320110457946166`，brain `oab/pr/25-review-la6` 未同步更新；LA6 r1 final findings 為 2B/3S/2N，非 brain 之 1B/3S/1N）：
   - **B7 (LA6 late addendum)** — §2.2 / §2.4 / §4.5 `FADE_NEAR/FAR = camera.near ± X` 於 orthographic 下**恆等於 no-fade**（wall `|zCam|` 通常 > `camera.near + 2.5`，`smoothstep` 恆 = 1）。改用 `zWallNear = min(|zCam(vertex)|)` 為 anchor：`smoothstep(FADE_NEAR_OFFSET=0.5, FADE_FAR_OFFSET=2.5, |zCam| - zWallNear)`；wall setup 時計算 cache、相機切換 re-bake
