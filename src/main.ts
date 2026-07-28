@@ -3,8 +3,7 @@
 // Real bootstrapping (game loop, three.js scene, InputMapper, persistence
 // wiring) lands in the spike-phase implementation PR.
 //
-// For now this file just verifies the adrHash injection wiring works end
-// to end (ADR-0006 §2.3). Runs once on load, then logs to console.
+import { createScene } from './render';
 
 const app = document.getElementById('app');
 if (app === null) {
@@ -16,5 +15,12 @@ const buildTime = import.meta.env.__BUILD_TIME__;
 const commitSha = import.meta.env.__COMMIT_SHA__;
 
 app.textContent = 'tetris-XL scaffolding — real bootstrap arrives in spike-phase PR';
+
+export function bootRenderer(): ReturnType<typeof createScene> {
+  app.textContent = '';
+  return createScene(app);
+}
+
+bootRenderer();
 
 console.info('[tetris-XL] adrHash:', adrHash, '· build:', buildTime, '· commit:', commitSha);

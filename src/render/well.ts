@@ -1,0 +1,1 @@
+export { BASE_WALL_ALPHA, FADE_FAR_OFFSET, FADE_NEAR_OFFSET, DEPTH_SEGMENTS } from './constants';
