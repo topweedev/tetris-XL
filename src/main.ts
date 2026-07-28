@@ -18,6 +18,6 @@ export function bootRenderer(): ReturnType<typeof createScene> {
   return bundle;
 }
 
-bootRenderer();
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => bootRenderer(), { once: true });
 
 if (import.meta.env.DEV) console.info('[tetris-XL] adrHash:', adrHash, '· build:', buildTime, '· commit:', commitSha);
