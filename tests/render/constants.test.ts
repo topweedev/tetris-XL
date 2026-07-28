@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_DEPTH, DEPTH_SEGMENTS, FADE_FAR_OFFSET, FADE_NEAR_OFFSET, BASE_WALL_ALPHA } from '../../src/render/constants';
+import { BOARD_DEPTH, DEPTH_SEGMENTS, FADE_FAR_OFFSET, FADE_NEAR_OFFSET, BASE_WALL_ALPHA, CAMERA_HEIGHT, WELL_TILT_DEGREES } from '../../src/render/constants';
 import { DEPTH_RING_ELEMENT_COUNT, DEPTH_RING_Z } from '../../src/render/depth-rings';
 
 describe('renderer foundation constants', () => {
@@ -9,5 +9,6 @@ describe('renderer foundation constants', () => {
     expect(DEPTH_RING_Z).toEqual(Array.from({ length: 11 }, (_, index) => index + 1));
     expect(DEPTH_RING_ELEMENT_COUNT).toBe(13);
     expect([BASE_WALL_ALPHA, FADE_NEAR_OFFSET, FADE_FAR_OFFSET]).toEqual([0.28, 0.5, 2.5]);
+    expect(typeof CAMERA_HEIGHT).toBe('number'); expect(CAMERA_HEIGHT).toBe(20); expect(WELL_TILT_DEGREES).toBe(-5);
   });
 });
