@@ -13,7 +13,7 @@ describe('well geometry', () => {
     }
   });
   it('bakes RGBA depth fade from transparent near to baseline far', () => {
-    const camera = new THREE.OrthographicCamera(-8, 8, 8, -8, 0.1, 100); camera.position.set(0, 20, 0); camera.lookAt(0, -6, 0); camera.updateMatrixWorld();
+    const camera = new THREE.OrthographicCamera(-8, 8, 8, -8, 0.1, 100); camera.position.set(0, 20, 0); camera.up.set(0, 0, -1); camera.lookAt(0, -6, 0); camera.rotateX(THREE.MathUtils.degToRad(-5)); camera.updateMatrixWorld();
     const group = createWell(camera); const color = group.children[0] as THREE.Mesh; const attr = color.geometry.getAttribute('color');
     expect(attr.itemSize).toBe(4); const alpha = Array.from(attr.array as Float32Array).filter((_, i) => i % 4 === 3) as number[];
     expect(Math.min(...alpha)).toBeCloseTo(0, 5); expect(Math.max(...alpha)).toBeCloseTo(BASE_WALL_ALPHA, 5);
