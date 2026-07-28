@@ -10,7 +10,7 @@ tags: [adr, tetris-xl, renderer, visual, three-js, well-shaft, mockup, a11y]
 
 # ADR-0008: Well-Shaft Renderer 視覺語言（Layer 1 全域規則 + Layer 2 Piece 視覺）
 
-- 狀態：Accepted（rev.4 — human accept 2026-07-25；三 reviewer 齊過 LA4/LA6/LA7；rev.3.1 收斂 all-nit；rev.3 依 LA6+LA7 round 1；rev.2 依 LA4 round 1；rev.1 draft）
+- 狀態：Accepted（rev.6 — 2026-07-28 §2.2.1 相機姿態記號 disambiguation，clarification amend；rev.5 sync amend ADR-0009 rev.2.1；rev.4 — human accept 2026-07-25；三 reviewer 齊過 LA4/LA6/LA7；rev.3.1 收斂 all-nit；rev.3 依 LA6+LA7 round 1；rev.2 依 LA4 round 1；rev.1 draft）
 - 日期：2026-07-25
 - 決策者：LA1 起草，待人類 + review agents (LA6 round 2 / LA7 round 2) 確認
 - 相關文件：
@@ -62,7 +62,16 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
 
 #### 2.2.1 視角與投影 (Camera / Projection)
 
-- **Tilt**：`rotateX(-5°)`，near-vertical（幾乎純俯視）。
+- **相機姿態（unambiguous pose spec）**：
+  - **Base pose**：`OrthographicCamera` 置於井道正上方，aim vector 指向井道中心（world `-Y` 方向；井道中心 = `(0, -BOARD_DEPTH/2, 0)`，於現行 renderer 座標下為 `(0, -6, 0)`），屬「straight-down」姿態。
+  - **相機 up 向量**：`camera.up = (0, 0, -1)` — 世界 `-Z` 對應螢幕「上」（位於 `z = -BOARD_WIDTH/2` 之井壁位於螢幕上方；位於 `z = +BOARD_WIDTH/2` 之井壁位於螢幕下方）。此設定使 `lookAt(wellCenter)` 成立後，相機 local `+X` 軸對應 world `+X`（in-view horizontal）。
+  - **Tilt**：從 base pose 起算 **`5°` near-vertical 微傾**（屬 ADR-0001 §2.5 alt-mode「near-vertical top-down 家族（0° ± 小傾角）」之具體規範，見 §2.1 delta 標記）。傾角沿**相機 local `+X` 軸**旋轉 `-5°`（right-hand rule around local `+X`），使 aim vector 由 world `-Y = (0, -1, 0)` 變為 `(0, -cos 5°, +sin 5°) ≈ (0, -0.9962, +0.0872)`（即 `y` 分量微減、`z` 分量微增至 `+0.087`）。幾何意義：由於 `camera.up = (0, 0, -1)` 使 world `-Z` 為螢幕「上」，此 tilt 令 camera 略朝 world `+Z` 側（＝螢幕「下」）俯身觀察，符合 mockup `oab/design/tetris-xl-well-shaft@e439844` 之透視 hint。
+  - **記號 `rotateX(-5°)` 之語意（historical + disambiguation）**：本 ADR rev.1–rev.5 使用簡寫 `rotateX(-5°)`，**非**指在 three.js 預設 `-Z` lookdir 相機上直接呼叫 `camera.rotation.x = -5°`（此為 near-**horizontal** iso view，與本 ADR 「near-vertical」意圖相反）；而是指 **base pose（straight-down）成立後**，於**相機 local frame** 之 `+X` 軸再套 `-5°` right-hand rotation（等價於：aim 由 `-Y` 沿 local `+X` 軸微傾 `5°` 至 `+Z` 側）。實作時建議以 `camera.rotateX(THREE.MathUtils.degToRad(-5))`（three.js 中此方法作用於 **local** frame，見下 canonical recipe）表達，**不得**逕以 `camera.rotation.x = -5°` 在預設 lookdir 相機上套用。
+  - **實作參考（canonical）**：
+    - `camera.position.set(0, H, 0); camera.up.set(0, 0, -1); camera.lookAt(0, -BOARD_DEPTH/2, 0); camera.rotateX(THREE.MathUtils.degToRad(-5));`（此處 `-5°` 為 `WELL_TILT_DEGREES` 常數；`rotateX` 於 three.js 中作用於 **local** frame，即 lookAt 後的 local `+X` 軸）。`H` 為 P4.1a 期 tunable，`H = 20` 為建議值（`OrthographicCamera` frustum `[near, far] = [0.1, 100]` 於此值可完整覆蓋井道 y ∈ [−12, 0]）。
+    - 執行順序：`lookAt` 建立 straight-down base pose → `rotateX` 施加 local `+X` tilt。順序不可倒（先 `rotateX` 再 `lookAt` 會被 `lookAt` 覆蓋掉 tilt）。
+    - `bakeZWallNear(camera, walls)`（見 ADR-0009 §2.2）於 tilt 施加後呼叫；建議 tilt 後手動 `camera.updateMatrixWorld()`，避免 bake 前 `matrixWorldInverse` 尚未反映 tilt。
+  - **本 ADR 記錄視角語意，不 mandate 具體 `camera.position` 世界座標**（`H` 為 P4.1a 期 tunable，見 §2.4）；但 mandate 上述「base pose = straight-down + up = -Z」+「tilt = local +X 軸 -5° right-hand」語意組合。
 - **透視性質**：**非物理透視**（non-physical projection）。mockup 使用 CSS `perspective(2400px)` 作為外框視覺投影 hint，但井道深度縮放採獨立公式（見 §2.2.2），不對應真 3D 相機投影矩陣。
 - **實作建議路徑**：
   - `OrthographicCamera` + 將 `s(z)` 烘焙進每個 instance 的 `instanceMatrix`（locked cells InstancedMesh；per-instance scale 由 CPU 端在初始化 / 每次修改場地時 set）。
@@ -332,4 +341,9 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - §2.4 閉合參數：新增「井壁相關 tunables 讓渡給 ADR-0009」段落，明列本 ADR 已閉合的井壁方案本身 + 讓渡給 ADR-0009 的具體 tunables。
   - §5 follow-up「井壁 A / B / C mockup」標記 CLOSED，指向 ADR-0009。
   - Reviewer：LA4 mini-sanity（correctness / cross-ref）為預設；LA6 / LA7 不需 review（無 perf / a11y 影響，純 pointer 更新）。
+- **rev.6（2026-07-28，clarification amend）** — 依 M4 P4.1a PR #28 LA4 round 1 review (`oab/pr/28-review-la4`) B1（相機姿態實作為 near-**horizontal**，非 near-**vertical**）之根因分析：原 §2.2.1 記號 `rotateX(-5°)` 在（a）「absolute Euler on default `-Z`-lookdir camera」與（b）「local `+X` tilt from straight-down base pose」兩解讀下皆可 parse，PR #28 實作端誤採（a），產生 near-horizontal iso view，違背本 ADR「near-vertical（幾乎純俯視）」意圖。本 rev 純為 §2.2.1 記號 disambiguation，無其他 semantic 變更：
+  - §2.2.1：新增「相機姿態（unambiguous pose spec）」段落，明列 base pose = straight-down、`camera.up = (0, 0, -1)`、tilt = local `+X` 軸 `-5°` right-hand rotation（等價於「aim 由 `-Y = (0,-1,0)` 變為 `(0, -cos 5°, +sin 5°) ≈ (0, -0.9962, +0.0872)`」）；附 canonical 實作 recipe（`lookAt` 建立 base pose 後 `rotateX` 施加 local tilt，順序不可倒；tilt 後 `updateMatrixWorld` 保險）；否定「`camera.rotation.x = -5°` on default camera」之錯誤解讀。
+  - §2.2.1：保留其餘既有段落（透視性質、實作建議 / 不建議路徑）不動；本 rev 純加清晰度，未變更 rendering 語意 / 效能 / a11y 條款。
+  - Status 維持 `accepted`（本 rev 為 accepted 狀態下之 clarification amendment，屬 doc-only）。無 code 影響（PR #28 之修復由 LA2 依本 rev §2.2.1 之 canonical recipe 實作）。
+  - Reviewer：LA4 mini-sanity（correctness / cross-ref §2.2.1 與 ADR-0001 §2.5 alt-mode 家族定義是否一致）為預設；LA6 / LA7 不需 review（無 perf / a11y 影響，純記號澄清）。
 
