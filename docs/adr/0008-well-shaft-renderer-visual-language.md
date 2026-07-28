@@ -102,7 +102,7 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
 #### 2.2.4 井壁
 
 - **狀態**：**已定案於 ADR-0009**（rev.2.1，2026-07-28 accepted）。方案 C（近端深度淡化 / depth-fade）由 ADR-0009 §2.2 規範，取代原 rev.1–rev.4「暫用透明井壁 + 未定案」表述。
-- **本 ADR 保留 renderOrder 語意**：井壁層仍為 `0`（不遮 locked）；depth ring 屬同層，depth-fade 對 ring 可見性影響由 ADR-0009 §2.3 規範。
+- **本 ADR 保留 renderOrder 語意**：井壁層仍為 `0`（不遮 locked）；depth ring 屬同層，depth-fade 對 ring 可見性影響由 ADR-0009 §2.2 規範（`Depth ring（z=1..11 + rim）不受本規則影響`）。
 - **本 ADR 不 mandate 井壁材質實作細節**（fade 公式、`zWallNear` anchor、`FADE_NEAR_OFFSET / FADE_FAR_OFFSET`、segment count 等）皆由 ADR-0009 §2.2 / §2.4 擁有；若 ADR-0009 未來 amend 井壁方案，不需回改本 ADR。
 
 ### 2.3 Layer 2 — Piece / Interaction 視覺
