@@ -1,8 +1,3 @@
-// src/main.ts — spike scaffolding placeholder.
-//
-// Real bootstrapping (game loop, three.js scene, InputMapper, persistence
-// wiring) lands in the spike-phase implementation PR.
-//
 import { createScene } from './render';
 
 const app = document.getElementById('app');
@@ -15,13 +10,14 @@ const adrHash = import.meta.env.__ADR_HASH__;
 const buildTime = import.meta.env.__BUILD_TIME__;
 const commitSha = import.meta.env.__COMMIT_SHA__;
 
-app.textContent = 'tetris-XL scaffolding — real bootstrap arrives in spike-phase PR';
-
+let bundle: ReturnType<typeof createScene> | null = null;
 export function bootRenderer(): ReturnType<typeof createScene> {
+  if (bundle !== null) return bundle;
   root.textContent = '';
-  return createScene(root);
+  bundle = createScene(root);
+  return bundle;
 }
 
 bootRenderer();
 
-console.info('[tetris-XL] adrHash:', adrHash, '· build:', buildTime, '· commit:', commitSha);
+if (import.meta.env.DEV) console.info('[tetris-XL] adrHash:', adrHash, '· build:', buildTime, '· commit:', commitSha);

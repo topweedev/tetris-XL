@@ -6,4 +6,3 @@ export const BASE_WALL_ALPHA = 0.28;
 export const FADE_NEAR_OFFSET = 0.5;
 export const FADE_FAR_OFFSET = 2.5;
 export const WELL_TILT_DEGREES = -5;
-export const DELTA_Y = 1;
