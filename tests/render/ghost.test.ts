@@ -1,0 +1,4 @@
+import { describe, expect, it } from 'vitest';
+import { createGhostMesh, updateGhostTransform } from '../../src/render/ghost';
+import { typeId, rotationStateId } from '../../src/engine/types';
+describe('ghost renderer', () => { it('uses dashed white landing wireframe', () => { const mesh = createGhostMesh(typeId(0), rotationStateId(0)); expect(mesh.renderOrder).toBe(2); expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(0); expect(mesh.material).toMatchObject({ dashSize: 6, gapSize: 4 }); }); it('drops a piece onto the floor', () => { const mesh = createGhostMesh(typeId(0), rotationStateId(0)); updateGhostTransform(mesh, { typeId: typeId(0), rotationStateId: rotationStateId(0), anchor: new Int8Array([0, 0, 5]) }, new Uint8Array(300)); expect(mesh.position.z).toBe(0); }); });
