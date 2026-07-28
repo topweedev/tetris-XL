@@ -5,3 +5,4 @@ export * from './theme';
 export * from './well';
 export * from './piece';
 export * from './locked';
+export * from './ghost';

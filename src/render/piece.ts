@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import type { TypeId, RotationStateId } from '@engine/types';
 import { ROTATION_STATES, unpackCells } from '@engine/pieces/rotations';
 import type { RenderPreset } from './theme';
+import { ACTIVE_FILL_ALPHA_BY_PRESET, ACTIVE_OUTLINE_COLOR } from './constants';
 
-export const ACTIVE_OUTLINE_COLOR = 0x39e6cf;
-const activeAlpha = (preset: RenderPreset): number => preset === 'high-contrast' ? 0.15 : 0.28;
+const activeAlpha = (preset: RenderPreset): number => ACTIVE_FILL_ALPHA_BY_PRESET[preset];
 function stateCells(typeId: TypeId, rotationStateId: RotationStateId) { const states = ROTATION_STATES[Number(typeId)]!; const state = states.find((candidate) => Number(candidate.stateId) === Number(rotationStateId)) ?? states[0]!; return unpackCells(state); }
 
 export function createActivePieceMesh(typeId: TypeId, rotationStateId: RotationStateId, preset: RenderPreset): THREE.Group {
