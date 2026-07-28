@@ -99,11 +99,11 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
 - **RenderOrder（Layer 1 全 ring 一致）**：`renderOrder = 0`（與井壁同層）；ring **不得** 遮擋 `renderOrder ≥ 1` 的 locked cell。實作端須確保 depth-write / z-fighting 不產生 ring 剪切 locked 的情況（若必要，關閉 ring 的 `depthWrite`）。
 - Ring 樣式：非填充、線框（1 CSS px `--rim-soft` 為預設，high-DPR 時依 `devicePixelRatio` 保持 ≥ 1 CSS px），依 §2.2.2 公式 `s(z)` 縮放。
 
-#### 2.2.4 井壁（暫定）
+#### 2.2.4 井壁
 
-- **暫用**：透明井壁 + depth ring 呈現，不採實體井壁材質。
-- **狀態**：**未定案**。井壁 A / B / C 方案（透明壁 / 前壁切開 / 近端深度淡化）將由人類另派 LA8 出 mockup，之後在本 ADR 或後續 ADR 補上。
-- 本 ADR **不 mandate** 任何井壁方案，實作階段可先以暫定透明壁 + depth ring 上線，待井壁 ADR 出來再切換。
+- **狀態**：**已定案於 ADR-0009**（rev.2.1，2026-07-28 accepted）。方案 C（近端深度淡化 / depth-fade）由 ADR-0009 §2.2 規範，取代原 rev.1–rev.4「暫用透明井壁 + 未定案」表述。
+- **本 ADR 保留 renderOrder 語意**：井壁層仍為 `0`（不遮 locked）；depth ring 屬同層，depth-fade 對 ring 可見性影響由 ADR-0009 §2.3 規範。
+- **本 ADR 不 mandate 井壁材質實作細節**（fade 公式、`zWallNear` anchor、`FADE_NEAR_OFFSET / FADE_FAR_OFFSET`、segment count 等）皆由 ADR-0009 §2.2 / §2.4 擁有；若 ADR-0009 未來 amend 井壁方案，不需回改本 ADR。
 
 ### 2.3 Layer 2 — Piece / Interaction 視覺
 
@@ -175,6 +175,11 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
 - RenderOrder 分層（延伸 ADR-0001 §2.5 taxonomy：warning ring 屬 wall 層 0）
 - WCAG a11y 不變式（1.4.1 非顏色冗餘、1.4.11 對比 3:1）
 - Locked palette 之 CVD 距離下限（≥ 0.3）
+
+**井壁相關 tunables 讓渡給 ADR-0009**（rev.5 sync amend, 2026-07-28）：
+
+- 井壁方案本身（option C = near-Z depth fade）為 ADR-0008 閉合、由 ADR-0009 具現化。改用其他方案需同時 amend 本 ADR §2.2.4 + ADR-0009。
+- 井壁 depth-fade 公式、`zWallNear` anchor、`FADE_NEAR_OFFSET / FADE_FAR_OFFSET`、segment count、preset 切換、context restore 策略等**由 ADR-0009 §2.2 / §2.4 擁有**，本 ADR 不再列為 tunable。改動只需 amend ADR-0009。
 
 ## 3. 已考慮的替代方案 (Alternatives Considered)
 
@@ -254,7 +259,7 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
 
 **Design（人類另派 LA8 in `#design-lab`）**：
 
-- **井壁 A / B / C mockup**，之後 amend §2.2.4 或另開井壁 ADR。
+- **井壁 A / B / C mockup** — **CLOSED**（rev.5 sync amend）：方案 C（近端深度淡化 / depth-fade）由 ADR-0009 rev.2.1 具現化並 accepted 於 2026-07-28。§2.2.4 已同步更新，指向 ADR-0009 §2.2 / §2.4。
 - **Locked palette review**：確保 §2.3.3 CVD 距離 ≥ 0.3、且 `activeOutlineColor` 不在 palette 內；如現行 `#39e6cf` 為 locked I3 用色即需替換。
 - **Locked 非顏色 pattern / hatching / glyph per typeId** 設計（滿足 §2.3.3 mandate）；建議借鑒 `oab/design/piece-catalog` 現有 typeId ID / silhouette 語彙。
 - **Warning cue 設計**：Z=10 red ring 之外的非顏色 cue（dashed 已定為 baseline，加成 pulse animation 與 DOM overlay badge 由 LA8 設計）。
@@ -322,4 +327,9 @@ LA8 於 2026-07-25 交付一組井道 + 方塊視覺 mockup（人類在 delivery
   - LA7 N3：§4.5 a11y M4 verification 新增「深度誤判 / ghost 高度」verify item（驗 depth ruler / contact frame 對 ghost 高度判斷的有效性）。
   - LA7 §6 S2 wording：更正「§4.5 flag 深度誤判為 M4 verify item」→「§5 depth ruler / contact frame 緩解深度誤判；§4.5 未另列獨立 verify item（於 rev.3.1 補上）」。
 - **rev.4（2026-07-25，Accepted）** — 人類 accept 為 accepted status。同 commit 中 sync amend ADR-0001 §2.5 alt-mode 表述為「near-vertical top-down 家族（0° ± 小傾角，具體規範見 ADR-0008）」（ADR-0001 rev.7），滿足 LA4 S1 path (b) sync-amend 約束。三 reviewer 齊過紀錄：LA4 REVIEW_OK (round 1 + 2)、LA6 REVIEW_OK (round 2)、LA7 REVIEW_OK (round 2)。無新內容變更；本 rev 純為 status transition + upstream sync。
+- **rev.5（2026-07-28，sync amend）** — ADR-0009 rev.2.1 (`424383f`) accepted 後之 downstream sync amend。無新決策內容；純粹 ownership 讓渡與狀態同步：
+  - §2.2.4：井壁狀態從「未定案」改為「已定案於 ADR-0009」（方案 C = near-Z depth fade）；井壁材質實作細節（fade 公式、`zWallNear` anchor、`FADE_NEAR_OFFSET / FADE_FAR_OFFSET`、segment count 等）ownership 讓渡給 ADR-0009 §2.2 / §2.4。
+  - §2.4 閉合參數：新增「井壁相關 tunables 讓渡給 ADR-0009」段落，明列本 ADR 已閉合的井壁方案本身 + 讓渡給 ADR-0009 的具體 tunables。
+  - §5 follow-up「井壁 A / B / C mockup」標記 CLOSED，指向 ADR-0009。
+  - Reviewer：LA4 mini-sanity（correctness / cross-ref）為預設；LA6 / LA7 不需 review（無 perf / a11y 影響，純 pointer 更新）。
 
