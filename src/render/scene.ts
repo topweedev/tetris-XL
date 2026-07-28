@@ -8,8 +8,8 @@ export function createScene(container: HTMLElement): SceneBundle {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x071018);
   const aspect = Math.max(container.clientWidth, 1) / Math.max(container.clientHeight, 1);
   const camera = new THREE.OrthographicCamera(-8 * aspect, 8 * aspect, 8, -8, 0.1, 100);
-  camera.position.set(0, -BOARD_DEPTH / 2, 18); camera.rotation.x = THREE.MathUtils.degToRad(WELL_TILT_DEGREES);
-  scene.add(camera); let well = createWell(camera); let rings = createDepthRings(); scene.add(well); scene.add(rings); scene.add(new THREE.AmbientLight(0xffffff, 1));
+  camera.position.set(0, 20, 0); camera.up.set(0, 0, -1); camera.lookAt(0, -BOARD_DEPTH / 2, 0); camera.rotateX(THREE.MathUtils.degToRad(WELL_TILT_DEGREES)); camera.updateMatrixWorld();
+  let well = createWell(camera); let rings = createDepthRings(); scene.add(well); scene.add(rings);
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2)); container.appendChild(renderer.domElement);
   const onContextLost = (event: Event): void => { event.preventDefault(); };
   const onContextRestored = (): void => { scene.remove(well, rings); well = createWell(camera); rings = createDepthRings(); scene.add(well, rings); void getPreset(); void getHighContrastCutaway(); };
