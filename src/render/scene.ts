@@ -24,33 +24,56 @@ function depthScale(z: number): number {
   return 1 + (z / BOARD_DEPTH) ** 2 * 7;
 }
 
-function wallMaterial(): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color: wallColor,
+function wallMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uZWallNear: { value: 0 },
+      uFadeNearOffset: { value: FADE_NEAR_OFFSET },
+      uFadeFarOffset: { value: FADE_FAR_OFFSET },
+      uWallColor: { value: wallColor },
+      uBaseAlpha: { value: BASE_WALL_ALPHA },
+    },
+    vertexShader: `varying float vZCam;
+      void main() {
+        vec4 cameraPosition = modelViewMatrix * vec4(position, 1.0);
+        vZCam = -cameraPosition.z;
+        gl_Position = projectionMatrix * cameraPosition;
+      }`,
+    fragmentShader: `uniform float uZWallNear;
+      uniform float uFadeNearOffset;
+      uniform float uFadeFarOffset;
+      uniform vec3 uWallColor;
+      uniform float uBaseAlpha;
+      varying float vZCam;
+      void main() {
+        float dist = abs(vZCam) - uZWallNear;
+        float fade = smoothstep(uFadeNearOffset, uFadeFarOffset, dist);
+        gl_FragColor = vec4(uWallColor, uBaseAlpha * fade);
+      }`,
     transparent: true,
-    vertexColors: true,
     depthWrite: false,
     side: THREE.DoubleSide,
-    opacity: 1,
   });
 }
 
-function makeWall(geometry: THREE.PlaneGeometry, material: THREE.MeshBasicMaterial): THREE.Mesh {
-  const position = geometry.getAttribute('position');
-  const colors = new Float32Array(position.count * 4);
+export function bakeZWallNear(camera: THREE.Camera, walls: THREE.Object3D[]): number {
+  camera.updateMatrixWorld();
+  const cameraMatrix = camera.matrixWorldInverse;
+  const vertex = new THREE.Vector3();
   let near = Number.POSITIVE_INFINITY;
-  for (let i = 0; i < position.count; i += 1) {
-    near = Math.min(near, Math.abs(position.getZ(i)));
+  for (const wall of walls) {
+    const geometry = (wall as THREE.Mesh).geometry as THREE.BufferGeometry;
+    const position = geometry.getAttribute('position');
+    wall.updateMatrixWorld(true);
+    for (let i = 0; i < position.count; i += 1) {
+      vertex.fromBufferAttribute(position, i).applyMatrix4(wall.matrixWorld).applyMatrix4(cameraMatrix);
+      near = Math.min(near, Math.abs(vertex.z));
+    }
   }
-  for (let i = 0; i < position.count; i += 1) {
-    const distance = Math.abs(position.getZ(i)) - near;
-    const fade = THREE.MathUtils.smoothstep(distance, FADE_NEAR_OFFSET, FADE_FAR_OFFSET);
-    colors[i * 4] = wallColor.r;
-    colors[i * 4 + 1] = wallColor.g;
-    colors[i * 4 + 2] = wallColor.b;
-    colors[i * 4 + 3] = fade * BASE_WALL_ALPHA;
-  }
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  return near;
+}
+
+function makeWall(geometry: THREE.PlaneGeometry, material: THREE.ShaderMaterial): THREE.Mesh {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.renderOrder = 0;
   return mesh;
@@ -75,7 +98,7 @@ function ring(z: number, color: THREE.Color, dashed = false): THREE.Line {
   return line;
 }
 
-function createWell(): THREE.Group {
+function createWell(camera?: THREE.Camera): THREE.Group {
   const well = new THREE.Group();
   const material = wallMaterial();
   const half = BOARD_WIDTH / 2;
@@ -93,12 +116,19 @@ function createWell(): THREE.Group {
   walls[2].rotation.y = -Math.PI / 2;
   walls[2].position.set(half, -half, 0);
   walls[3].position.set(0, -half, half);
+  const createdWalls: THREE.Mesh[] = [];
   for (const wall of walls) {
     const baked = makeWall(wall.geometry as THREE.PlaneGeometry, material);
     baked.position.copy(wall.position);
     baked.rotation.copy(wall.rotation);
     well.add(baked);
+    createdWalls.push(baked);
     wall.geometry.dispose();
+  }
+  if (camera) {
+    well.updateMatrixWorld(true);
+    const zWallNear = bakeZWallNear(camera, createdWalls);
+    material.uniforms.uZWallNear.value = zWallNear;
   }
   for (let z = 1; z <= BOARD_DEPTH - 1; z += 1) well.add(ring(z, z === 10 ? warningColor : rimColor, z === 10));
   well.add(ring(BOARD_DEPTH, rimColor));
@@ -115,7 +145,7 @@ export function createScene(container: HTMLElement): SceneBundle {
   camera.rotation.x = WELL_TILT;
   camera.lookAt(0, -BOARD_DEPTH / 2, 0);
   scene.add(camera);
-  scene.add(createWell());
+  scene.add(createWell(camera));
   scene.add(new THREE.AmbientLight(0xffffff, 1));
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
