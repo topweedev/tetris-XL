@@ -3,7 +3,7 @@ import type { TypeId, RotationStateId } from '@engine/types';
 import { unpackCells } from '@engine/pieces/rotations';
 import { findRotationState } from './rotation-state';
 import type { RenderPreset } from './theme';
-import { ACTIVE_FILL_ALPHA_BY_PRESET, ACTIVE_OUTLINE_COLOR } from './constants';
+import { ACTIVE_FILL_ALPHA_BY_PRESET, ACTIVE_OUTLINE_COLOR, PIECE_PALETTE } from './constants';
 import { boardToRenderVec3, depthScale } from './coords';
 
 const activeAlpha = (preset: RenderPreset): number => ACTIVE_FILL_ALPHA_BY_PRESET[preset];
@@ -12,7 +12,8 @@ function stateCells(typeId: TypeId, rotationStateId: RotationStateId) { return u
 export function createActivePieceMesh(typeId: TypeId, rotationStateId: RotationStateId, preset: RenderPreset): THREE.Group {
   const group = new THREE.Group();
   const box = new THREE.BoxGeometry(1, 1, 1); const edges = new THREE.EdgesGeometry(box);
-  const fillMaterial = new THREE.MeshBasicMaterial({ color: ACTIVE_OUTLINE_COLOR, transparent: true, opacity: activeAlpha(preset), depthTest: true, depthWrite: false });
+  const rgb = PIECE_PALETTE[Number(typeId)]!; const fillColor = new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2]);
+  const fillMaterial = new THREE.MeshBasicMaterial({ color: fillColor, transparent: true, opacity: activeAlpha(preset), depthTest: true, depthWrite: false });
   const outlineMaterial = new THREE.LineBasicMaterial({ color: ACTIVE_OUTLINE_COLOR, transparent: true, opacity: 0.7, depthTest: true, depthWrite: false });
   for (const [x, y, z] of stateCells(typeId, rotationStateId)) {
     const cell = new THREE.Group();
