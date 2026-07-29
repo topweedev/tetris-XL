@@ -29,8 +29,11 @@ export function updateActivePieceTransform(group: THREE.Group, boardPosition: TH
 
 /** Update the shared active fill material without rebuilding piece geometry. */
 export function updateActiveFillAlpha(group: THREE.Group, preset: RenderPreset): void {
-  const cell = group.children[0] as THREE.Group | undefined;
-  const fill = cell?.children[0] as THREE.Mesh | undefined;
-  const material = fill?.material as THREE.MeshBasicMaterial | undefined;
-  if (material !== undefined) material.opacity = activeAlpha(preset);
+  const opacity = activeAlpha(preset);
+  for (const child of group.children) {
+    const cell = child as THREE.Group;
+    const fill = cell.children[0] as THREE.Mesh | undefined;
+    const material = fill?.material as THREE.MeshBasicMaterial | undefined;
+    if (material !== undefined) material.opacity = opacity;
+  }
 }

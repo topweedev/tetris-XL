@@ -4,7 +4,7 @@ import { createDepthRings } from './depth-rings';
 import { createWell, updateWellPreset } from './well';
 import type { RenderPreset } from './theme';
 export interface SceneBundle { scene: THREE.Scene; camera: THREE.OrthographicCamera; renderer: THREE.WebGLRenderer; resize: () => void; applyPreset: (preset: RenderPreset) => void; dispose: () => void; }
-function disposeGroup(group: THREE.Object3D): void { const materials = new Set<THREE.Material>(); group.traverse((object) => { const mesh = object as THREE.Mesh; mesh.geometry?.dispose(); const mats = Array.isArray(mesh.material) ? mesh.material : (mesh.material ? [mesh.material] : []); mats.forEach((material) => materials.add(material)); }); materials.forEach((material) => material.dispose()); }
+export function disposeGroup(group: THREE.Object3D): void { const materials = new Set<THREE.Material>(); group.traverse((object) => { const mesh = object as THREE.Mesh; mesh.geometry?.dispose(); const mats = Array.isArray(mesh.material) ? mesh.material : (mesh.material ? [mesh.material] : []); mats.forEach((material) => materials.add(material)); }); materials.forEach((material) => material.dispose()); }
 export function createScene(container: HTMLElement): SceneBundle {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x071018);
   const aspect = Math.max(container.clientWidth, 1) / Math.max(container.clientHeight, 1);

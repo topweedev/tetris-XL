@@ -22,11 +22,15 @@ describe('theme live mutation helpers', () => {
     expect(before.version).toBeGreaterThan(version);
   });
   it('updates active fill opacity without replacing its material', () => {
-    const piece = createActivePieceMesh(typeId(0), rotationStateId(0), 'translucent');
+    const piece = createActivePieceMesh(typeId(4), rotationStateId(0), 'translucent');
     const fill = (piece.children[0] as THREE.Group).children[0] as THREE.Mesh;
     const material = fill.material as THREE.MeshBasicMaterial;
     updateActiveFillAlpha(piece, 'opaque-fallback');
     expect(fill.material).toBe(material);
     expect(material.opacity).toBe(0.92);
+    for (const child of piece.children) {
+      const childFill = (child as THREE.Group).children[0] as THREE.Mesh;
+      expect((childFill.material as THREE.MeshBasicMaterial).opacity).toBe(0.92);
+    }
   });
 });

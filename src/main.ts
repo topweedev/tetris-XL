@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import { buildBootState, step } from '@engine/core';
 import { KEYMAP, MAX_INPUT_EVENTS_PER_TICK, createInputState, sampleInput } from '@engine/input';
 import type { InputState, KeyInputEvent } from '@engine/input';
-import type { GameState, PhysicalKey, RotationStateId, TypeId } from '@engine/types';
+import { GameAction } from '@engine/types';
+import type { GameAction as GameActionType, GameState, PhysicalKey, RotationStateId, TypeId } from '@engine/types';
 import {
   createActivePieceMesh,
   createGhostMesh,
   createHud,
   createLockedMesh,
   createScene,
+  disposeGroup,
   getPreset,
   relightLocked,
   subscribe,
@@ -20,8 +22,8 @@ import {
   updateLockedMesh,
 } from './render';
 
-const TICK_MS = 1000 / 60;
-const MAX_ACCUMULATOR_MS = TICK_MS * 4;
+export const TICK_MS = 1000 / 60;
+export const MAX_ACCUMULATOR_MS = 250;
 const relevantCodes = new Set(KEYMAP.map(({ code }) => code));
 const queuedEvents: KeyInputEvent[] = [];
 const activeAnchor = new THREE.Vector3();
@@ -33,15 +35,21 @@ export interface GameRuntime {
 
 let runtime: GameRuntime | null = null;
 
-function disposeObject(object: THREE.Object3D): void {
-  const materials = new Set<THREE.Material>();
-  object.traverse((child) => {
-    const mesh = child as THREE.Mesh;
-    mesh.geometry?.dispose();
-    const values = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
-    values.forEach((material) => materials.add(material));
-  });
-  materials.forEach((material) => material.dispose());
+function freshSeed(): number {
+  return globalThis.crypto.getRandomValues(new Uint32Array(1))[0]!;
+}
+
+/** Keep restart entropy at the integration boundary without changing deterministic engine semantics. */
+export function advanceGameState(
+  state: GameState,
+  actions: readonly GameActionType[],
+  tick: number,
+  seedSource: () => number = freshSeed,
+): GameState {
+  if (state.fsmState === 'GAME_OVER' && actions.includes(GameAction.Restart)) {
+    return buildBootState(seedSource());
+  }
+  return step(state, actions, tick);
 }
 
 function boardChanged(previous: Uint8Array, current: Uint8Array): boolean {
@@ -49,18 +57,33 @@ function boardChanged(previous: Uint8Array, current: Uint8Array): boolean {
   return false;
 }
 
-function keyboardEvent(event: KeyboardEvent): void {
-  if (!relevantCodes.has(event.code as PhysicalKey)) return;
-  event.preventDefault();
-  if (queuedEvents.length >= MAX_INPUT_EVENTS_PER_TICK) return;
-  queuedEvents.push({
+/** step() clones board every tick, so byte comparison is required after a step to avoid false GPU uploads. */
+export function shouldUpdateLocked(stepRan: boolean, previous: Uint8Array, current: Uint8Array): boolean {
+  return stepRan && boardChanged(previous, current);
+}
+
+export function capFrameDelta(delta: number): number {
+  return Math.min(Math.max(delta, 0), MAX_ACCUMULATOR_MS);
+}
+
+export function toKeyInputEvent(event: Pick<KeyboardEvent, 'type' | 'code' | 'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey'>): KeyInputEvent | null {
+  if (!relevantCodes.has(event.code as PhysicalKey)) return null;
+  return {
     type: event.type === 'keyup' ? 'keyup' : 'keydown',
     code: event.code as PhysicalKey,
     ctrlKey: event.ctrlKey,
     altKey: event.altKey,
     metaKey: event.metaKey,
+    // Shift is intentionally retained: ShiftLeft is the ADR-0004 SoftDrop game key.
     shiftKey: event.shiftKey,
-  });
+  };
+}
+
+function keyboardEvent(event: KeyboardEvent): void {
+  const inputEvent = toKeyInputEvent(event);
+  if (inputEvent === null) return;
+  event.preventDefault();
+  if (queuedEvents.length < MAX_INPUT_EVENTS_PER_TICK) queuedEvents.push(inputEvent);
 }
 
 export function bootRenderer(): GameRuntime {
@@ -72,7 +95,7 @@ export function bootRenderer(): GameRuntime {
   const hud = createHud(root);
   const locked = createLockedMesh();
   bundle.scene.add(locked);
-  let gameState = buildBootState(globalThis.crypto.getRandomValues(new Uint32Array(1))[0]!);
+  let gameState = buildBootState(freshSeed());
   let inputState: InputState = createInputState();
   let tick = 0;
   let active: THREE.Group | null = null;
@@ -80,7 +103,6 @@ export function bootRenderer(): GameRuntime {
   let activeType: TypeId | null = null;
   let activeRotation: RotationStateId | null = null;
   const boardSnapshot = new Uint8Array(gameState.board.length);
-  let boardInitialized = false;
   let previousTime = globalThis.performance.now();
   let accumulator = 0;
   let disposed = false;
@@ -89,7 +111,7 @@ export function bootRenderer(): GameRuntime {
   const removeDynamic = (object: THREE.Group | null): void => {
     if (object === null) return;
     bundle.scene.remove(object);
-    disposeObject(object);
+    disposeGroup(object);
   };
 
   const applyTheme = (preset: ReturnType<typeof getPreset>): void => {
@@ -117,26 +139,27 @@ export function bootRenderer(): GameRuntime {
       updateActivePieceTransform(active, activeAnchor, piece.rotationStateId);
       updateGhostTransform(ghost!, piece, gameState.board);
     }
-    if (!boardInitialized || boardChanged(boardSnapshot, gameState.board)) {
-      updateLockedMesh(locked, gameState.board);
-      boardSnapshot.set(gameState.board);
-      boardInitialized = true;
-    }
     updateHud(hud, gameState);
     bundle.renderer.render(bundle.scene, bundle.camera);
   };
 
   const frame = (now: number): void => {
     if (disposed) return;
-    accumulator += Math.min(Math.max(now - previousTime, 0), MAX_ACCUMULATOR_MS);
+    accumulator += capFrameDelta(now - previousTime);
     previousTime = now;
+    let stepRan = false;
     while (accumulator >= TICK_MS) {
       const sample = sampleInput(inputState, 1, queuedEvents);
       queuedEvents.length = 0;
       inputState = sample.state;
-      gameState = step(gameState, sample.actions, tick);
+      gameState = advanceGameState(gameState, sample.actions, tick);
       tick += 1;
       accumulator -= TICK_MS;
+      stepRan = true;
+    }
+    if (shouldUpdateLocked(stepRan, boardSnapshot, gameState.board)) {
+      updateLockedMesh(locked, gameState.board);
+      boardSnapshot.set(gameState.board);
     }
     renderState();
     animationId = globalThis.requestAnimationFrame(frame);
@@ -152,7 +175,7 @@ export function bootRenderer(): GameRuntime {
     unsubscribe();
     removeDynamic(active); removeDynamic(ghost);
     bundle.scene.remove(locked);
-    disposeObject(locked);
+    disposeGroup(locked);
     hud.dispose();
     bundle.dispose();
     queuedEvents.length = 0;
