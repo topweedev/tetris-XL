@@ -26,3 +26,11 @@ export function createActivePieceMesh(typeId: TypeId, rotationStateId: RotationS
 
 /** Mutates transforms only; callers must recreate the group when rotationStateId changes. */
 export function updateActivePieceTransform(group: THREE.Group, boardPosition: THREE.Vector3, rotationStateId: RotationStateId): void { if (group.userData['rotationStateId'] !== rotationStateId) throw new Error('active piece geometry does not match rotation state'); const cells = group.userData['cells'] as readonly CellTuple[]; group.position.set(0, 0, 0); group.scale.set(1, 1, 1); cells.forEach(([cx, cy, cz], index) => { const child = group.children[index]; if (!child) return; const bz = boardPosition.z + cz; boardToRenderVec3(child.position, boardPosition.x + cx, boardPosition.y + cy, bz); const scale = depthScale(bz); child.scale.set(scale, 1, scale); }); group.children.forEach((child, index) => { child.visible = index < cells.length; }); group.userData['rotationStateId'] = rotationStateId; }
+
+/** Update the shared active fill material without rebuilding piece geometry. */
+export function updateActiveFillAlpha(group: THREE.Group, preset: RenderPreset): void {
+  const cell = group.children[0] as THREE.Group | undefined;
+  const fill = cell?.children[0] as THREE.Mesh | undefined;
+  const material = fill?.material as THREE.MeshBasicMaterial | undefined;
+  if (material !== undefined) material.opacity = activeAlpha(preset);
+}

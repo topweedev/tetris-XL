@@ -8,3 +8,4 @@ export * from './locked';
 export * from './ghost';
 export * from './coords';
 export * from './rotation-state';
+export * from './hud';

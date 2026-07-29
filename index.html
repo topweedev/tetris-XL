@@ -38,7 +38,8 @@
     />
 
     <title>tetris-XL</title>
-    <style>#app { width: 100dvw; height: 100dvh; overflow: hidden; }</style>
+    <style>#app { position: relative; width: 100dvw; height: 100dvh; overflow: hidden; }
+      #hud { position: absolute; z-index: 10; top: 1rem; right: 1rem; color: #d9f7ff; font: 600 0.9rem/1.6 system-ui, sans-serif; text-align: right; pointer-events: none; }</style>
   </head>
   <body>
     <div id="app">
