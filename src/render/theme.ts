@@ -2,7 +2,7 @@ import { readValidated, SettingsSchema, writeValidated } from '../engine/persist
 export type RenderPreset = 'translucent' | 'high-contrast' | 'opaque-fallback';
 export const DEFAULT_PRESET: RenderPreset = 'translucent';
 export const DEFAULT_HIGH_CONTRAST_CUTAWAY = false;
-type ThemeState = { preset: RenderPreset; highContrastCutaway: boolean };
+export type ThemeState = { preset: RenderPreset; highContrastCutaway: boolean };
 const KEY = 'tetris-xl:settings:v2';
 const listeners = new Set<(state: ThemeState) => void>();
 let state: ThemeState | undefined;

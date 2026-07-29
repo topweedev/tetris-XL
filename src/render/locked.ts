@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BOARD_DEPTH, BOARD_WIDTH } from './constants';
 import { PIECE_PALETTE } from './constants';
 import { boardToRenderVec3, depthScale } from './coords';
+import type { RenderPreset } from './theme';
 
 export const MAX_INSTANCES = BOARD_WIDTH * BOARD_WIDTH * BOARD_DEPTH;
 
@@ -18,3 +19,6 @@ export function updateLockedMesh(mesh: THREE.InstancedMesh, board: Uint8Array): 
   }
   mesh.count = count; mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
+
+/** ADR-0009 keeps locked-cell palette luminance stable across presets. */
+export function relightLocked(_mesh: THREE.InstancedMesh, _preset: RenderPreset): void {}
