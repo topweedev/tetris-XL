@@ -1,4 +1,5 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createActivePieceMesh } from '../../src/render/piece';
+import { createActivePieceMesh, updateActivePieceTransform } from '../../src/render/piece';
 import { typeId, rotationStateId } from '../../src/engine/types';
-describe('active piece renderer', () => { it('builds all canonical type ids', () => { for (let i = 0; i < 12; i += 1) { const group = createActivePieceMesh(typeId(i), rotationStateId(0), 'translucent'); expect(group.renderOrder).toBe(3); expect(group.children.length).toBeGreaterThan(0); expect(group.children[0]!.children.length).toBe(2); } }); });
+describe('active piece renderer', () => { it('builds all typeIds with child render order and preset alpha', () => { for (let i = 0; i < 12; i += 1) { const group = createActivePieceMesh(typeId(i), rotationStateId(0), 'translucent'); expect(group.children.length).toBeGreaterThan(0); for (const cell of group.children) for (const child of cell.children) expect(child.renderOrder).toBe(3); const fill = group.children[0]!.children[0] as THREE.Mesh; expect((fill.material as THREE.MeshBasicMaterial).opacity).toBe(0.58); } }); it('maps a board anchor to centered render space', () => { const group = createActivePieceMesh(typeId(0), rotationStateId(0), 'high-contrast'); updateActivePieceTransform(group, new THREE.Vector3(2, 2, 5), rotationStateId(0)); expect(group.position.toArray()).toEqual([0, -5, 0]); expect(group.scale.y).toBe(1); }); });
