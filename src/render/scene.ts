@@ -10,7 +10,7 @@ export function createScene(container: HTMLElement): SceneBundle {
   const camera = new THREE.OrthographicCamera(-8 * aspect, 8 * aspect, 8, -8, 0.1, 100);
   camera.position.set(0, CAMERA_HEIGHT, 0); camera.up.set(0, 0, -1); camera.lookAt(0, -BOARD_DEPTH / 2, 0); camera.rotateX(THREE.MathUtils.degToRad(WELL_TILT_DEGREES)); camera.updateMatrixWorld();
   let well = createWell(camera); let rings = createDepthRings(); scene.add(well); scene.add(rings);
-  // TODO(M4-P4.1c): wire theme.subscribe for live preset vertex-color rebake.
+  // TODO(M4-P4.1c): wire theme.subscribe for well and active/locked/ghost live preset updates.
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2)); container.appendChild(renderer.domElement);
   const onContextLost = (event: Event): void => { event.preventDefault(); };
   const onContextRestored = (): void => { disposeGroup(well); disposeGroup(rings); scene.remove(well, rings); well = createWell(camera); rings = createDepthRings(); scene.add(well, rings); };

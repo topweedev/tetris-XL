@@ -3,3 +3,8 @@ export * from './depth-rings';
 export * from './scene';
 export * from './theme';
 export * from './well';
+export * from './piece';
+export * from './locked';
+export * from './ghost';
+export * from './coords';
+export * from './rotation-state';
