@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildBootState, buildPiece, step } from '@engine/core';
+import { buildBootState, step } from '@engine/core';
 import { KEYMAP, MAX_INPUT_EVENTS_PER_TICK, createInputState, sampleInput } from '@engine/input';
 import type { InputState, KeyInputEvent } from '@engine/input';
 import type { GameState, PhysicalKey, RotationStateId, TypeId } from '@engine/types';
@@ -8,7 +8,6 @@ import {
   createGhostMesh,
   createHud,
   createLockedMesh,
-  MVP_TYPE_IDS,
   createScene,
   getPreset,
   relightLocked,
@@ -22,7 +21,7 @@ import {
 } from './render';
 
 const TICK_MS = 1000 / 60;
-const MAX_ACCUMULATOR_MS = 250;
+const MAX_ACCUMULATOR_MS = TICK_MS * 4;
 const relevantCodes = new Set(KEYMAP.map(({ code }) => code));
 const queuedEvents: KeyInputEvent[] = [];
 const activeAnchor = new THREE.Vector3();
@@ -43,13 +42,6 @@ function disposeObject(object: THREE.Object3D): void {
     values.forEach((material) => materials.add(material));
   });
   materials.forEach((material) => material.dispose());
-}
-
-function restrictToMvp(state: GameState): GameState {
-  const piece = state.piece;
-  if (piece === null || MVP_TYPE_IDS.includes(piece.typeId)) return state;
-  const selected = MVP_TYPE_IDS[Number(piece.typeId) % MVP_TYPE_IDS.length]!;
-  return Object.freeze({ ...state, piece: buildPiece(selected) });
 }
 
 function boardChanged(previous: Uint8Array, current: Uint8Array): boolean {
@@ -142,7 +134,7 @@ export function bootRenderer(): GameRuntime {
       const sample = sampleInput(inputState, 1, queuedEvents);
       queuedEvents.length = 0;
       inputState = sample.state;
-      gameState = restrictToMvp(step(gameState, sample.actions, tick));
+      gameState = step(gameState, sample.actions, tick);
       tick += 1;
       accumulator -= TICK_MS;
     }
